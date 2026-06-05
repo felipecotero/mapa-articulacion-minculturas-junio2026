@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Articulación Minculturas · Cierre de Gobierno 2026</title>
+  <meta name="description" content="Mapa interactivo de las 86 acciones del Ministerio de las Culturas, las Artes y los Saberes para el cierre de gobierno – Junio 2026"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+  <style>
+    :root {
+      --gold:#F5C842; --gold-dark:#D4A017;
+      --blue:#1A3A6B; --blue-light:#2156A5;
+      --teal:#0D6E6E; --teal-soft:#4ECDC4;
+      --bg:#0A0F1E; --bg-card:#111827; --bg-card2:#1a2235;
+      --text:#F0F4FF; --text-muted:#8B96B0;
+      --border:rgba(255,255,255,0.08);
+      --shadow:0 8px 32px rgba(0,0,0,0.5);
+      --radius:12px;
+      --header-h:60px;
+      --filter-h:auto;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
+
+    /* ── HEADER ── */
+    header{
+      background:linear-gradient(135deg,#0A0F1E 0%,#111827 50%,#0D1B2A 100%);
+      border-bottom:1px solid var(--border);
+      padding:0 16px;
+      height:var(--header-h);
+      display:flex;align-items:center;justify-content:space-between;
+      flex-shrink:0;position:relative;z-index:1001;
+    }
+    .header-left{display:flex;align-items:center;gap:12px;min-width:0;}
+    .logo-minca{height:38px;width:auto;filter:brightness(1.1);flex-shrink:0;}
+    .header-title h1{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .header-title p{font-size:10px;color:var(--gold);font-weight:500;letter-spacing:0.4px;white-space:nowrap;}
+    .header-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+    .stat-chip{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--gold);font-weight:600;white-space:nowrap;}
+    .stat-chip span{color:var(--text);margin-right:3px;}
+
+    /* ── FILTER BAR ── */
+    #filter-bar{
+      background:var(--bg-card);border-bottom:1px solid var(--border);
+      padding:8px 16px;display:flex;align-items:center;gap:8px;
+      flex-wrap:wrap;flex-shrink:0;z-index:1000;
+    }
+    .filter-label{font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;}
+    .filter-group{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+    .filter-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--text-muted);cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;white-space:nowrap;}
+    .filter-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(245,200,66,0.08);}
+    .filter-btn.active{background:var(--gold);border-color:var(--gold);color:#0A0F1E;font-weight:600;}
+    .filter-divider{width:1px;height:22px;background:var(--border);flex-shrink:0;}
+    .filter-select{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 26px 4px 12px;font-size:11px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;outline:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238B96B0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:all 0.2s;}
+    .filter-select:hover{border-color:var(--gold);}
+    .filter-select option{background:var(--bg-card);color:var(--text);}
+    #search-input{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--text);font-family:'Inter',sans-serif;outline:none;width:160px;transition:all 0.2s;}
+    #search-input::placeholder{color:var(--text-muted);}
+    #search-input:focus{border-color:var(--gold);background:rgba(245,200,66,0.04);}
+    .view-toggle{display:flex;gap:4px;}
+    .view-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:4px 9px;cursor:pointer;color:var(--text-muted);transition:all 0.2s;font-size:13px;}
+    .view-btn.active{background:rgba(245,200,66,0.15);border-color:rgba(245,200,66,0.4);color:var(--gold);}
+
+    /* ── AREA DROPDOWN ── */
+    .area-dropdown-wrapper{position:relative;}
+    .area-dropdown-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 26px 4px 12px;font-size:11px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all 0.2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238B96B0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;max-width:200px;overflow:hidden;text-overflow:ellipsis;text-align:left;}
+    .area-dropdown-btn:hover,.area-dropdown-btn.open{border-color:var(--gold);background-color:rgba(245,200,66,0.06);}
+    .area-dropdown-btn.has-selection{border-color:rgba(78,205,196,0.6);color:var(--teal-soft);}
+    .area-dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:280px;max-width:360px;background:#161E2E;border:1px solid rgba(255,255,255,0.12);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.7);z-index:3000;overflow:hidden;}
+    .area-dropdown-panel.open{display:block;}
+    .area-panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);}
+    .area-panel-header span{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;}
+    .area-clear-btn{font-size:11px;color:var(--gold);cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;padding:0;}
+    .area-clear-btn:hover{text-decoration:underline;}
+    .area-options-list{max-height:240px;overflow-y:auto;padding:6px;}
+    .area-options-list::-webkit-scrollbar{width:4px;}
+    .area-options-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+    .area-option{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;font-size:11px;color:var(--text-muted);}
+    .area-option:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+    .area-option.selected{color:var(--text);}
+    .area-checkbox{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
+    .area-option.selected .area-checkbox{background:var(--teal-soft);border-color:var(--teal-soft);}
+    .area-checkbox-check{display:none;color:#0A0F1E;}
+    .area-option.selected .area-checkbox-check{display:block;}
+    .area-count-badge{margin-left:auto;background:rgba(255,255,255,0.06);border-radius:8px;padding:1px 5px;font-size:10px;color:var(--text-muted);}
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - var(--header-h) - 53px);}
+
+    /* ── MAP ── */
+    #map{flex:1;height:100%;background:#0D1B2A;}
+
+    /* ── SIDEBAR ── */
+    #sidebar{width:340px;flex-shrink:0;background:var(--bg-card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform 0.3s ease;}
+    .sidebar-header{padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .sidebar-header h3{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:var(--text);}
+    #events-count{font-size:10px;background:rgba(245,200,66,0.15);color:var(--gold);border-radius:10px;padding:2px 7px;font-weight:600;}
+    #events-list{flex:1;overflow-y:auto;padding:6px;}
+    #events-list::-webkit-scrollbar{width:4px;}
+    #events-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+    #calendar-view{display:none;flex:1;overflow-y:auto;padding:10px;}
+    #calendar-view::-webkit-scrollbar{width:4px;}
+    #calendar-view::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+
+    .event-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 12px;margin-bottom:6px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+    .event-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);opacity:0;transition:opacity 0.2s;}
+    .event-card:hover{border-color:rgba(245,200,66,0.4);transform:translateX(2px);box-shadow:var(--shadow);}
+    .event-card:hover::before,.event-card.highlighted::before{opacity:1;}
+    .event-card.highlighted{border-color:var(--gold);background:rgba(245,200,66,0.06);}
+    .event-card-date{display:flex;align-items:center;gap:5px;margin-bottom:5px;}
+    .date-badge{background:linear-gradient(135deg,var(--blue),var(--blue-light));border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;color:white;}
+    .time-badge{font-size:10px;color:var(--gold);font-weight:500;}
+    .event-card-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:5px;}
+    .event-card-meta{display:flex;flex-direction:column;gap:2px;}
+    .meta-row{display:flex;align-items:flex-start;gap:4px;font-size:10px;color:var(--text-muted);}
+    .meta-icon{flex-shrink:0;margin-top:1px;}
+    .meta-text{line-height:1.3;}
+    .area-tag{display:inline-block;background:rgba(13,110,110,0.2);border:1px solid rgba(13,110,110,0.4);color:var(--teal-soft);border-radius:4px;padding:1px 5px;font-size:9px;font-weight:500;margin-top:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .calendar-day{margin-bottom:14px;}
+    .calendar-day-header{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:var(--gold);padding:5px 0;border-bottom:1px solid rgba(245,200,66,0.2);margin-bottom:6px;}
+    #no-results{display:none;text-align:center;padding:40px 20px;color:var(--text-muted);}
+    #no-results p{font-size:12px;}
+
+    /* ── POPUP ── */
+    .leaflet-tile-pane{filter:saturate(0.65) brightness(0.9);}
+    .leaflet-popup-content-wrapper{background:var(--bg-card)!important;border:1px solid var(--border)!important;border-radius:12px!important;box-shadow:0 12px 40px rgba(0,0,0,0.6)!important;color:var(--text)!important;min-width:260px;max-width:320px;}
+    .leaflet-popup-tip{background:var(--bg-card)!important;}
+    .leaflet-popup-content{margin:14px 16px!important;}
+    .popup-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+    .popup-date-badge{background:linear-gradient(135deg,var(--blue),var(--blue-light));border-radius:5px;padding:2px 9px;font-size:11px;font-weight:700;color:white;white-space:nowrap;}
+    .popup-time{font-size:11px;color:var(--gold);font-weight:600;}
+    .popup-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:7px;}
+    .popup-row{display:flex;align-items:flex-start;gap:5px;margin-bottom:4px;font-size:11px;color:var(--text-muted);}
+    .popup-row svg{flex-shrink:0;margin-top:1px;}
+    .popup-area-tag{display:inline-block;background:rgba(13,110,110,0.2);border:1px solid rgba(13,110,110,0.4);color:var(--teal-soft);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:500;margin-top:6px;}
+    .popup-desc{font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);max-height:70px;overflow-y:auto;}
+
+    /* ── MAP LEGEND ── */
+    .map-legend{position:absolute;bottom:30px;left:16px;z-index:999;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:10px;color:var(--text-muted);box-shadow:var(--shadow);}
+    .map-legend h4{font-size:10px;font-weight:600;color:var(--text);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px;}
+    .legend-item{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+    .legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+
+    /* ── MOBILE TOGGLE ── */
+    #sidebar-toggle{display:none;position:fixed;bottom:20px;right:20px;z-index:2000;background:var(--gold);color:#0A0F1E;border:none;border-radius:50%;width:48px;height:48px;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:all 0.2s;}
+    #sidebar-toggle:hover{transform:scale(1.1);}
+
+    /* ── RESPONSIVE ── */
+    @media (max-width:900px){
+      .header-title p{display:none;}
+      .stat-chip:last-child{display:none;}
+      #filter-bar{padding:6px 12px;gap:6px;}
+      #search-input{width:120px;}
+    }
+    @media (max-width:640px){
+      header{height:52px;padding:0 12px;}
+      :root{--header-h:52px;}
+      .logo-minca{height:30px;}
+      .header-title h1{font-size:12px;}
+      .header-right{display:none;}
+      #filter-bar{padding:6px 10px;gap:5px;}
+      #filter-bar .filter-label{display:none;}
+      #filter-bar .filter-divider{display:none;}
+      #search-input{width:100px;}
+      .filter-btn{padding:3px 9px;font-size:10px;}
+
+      .main-layout{flex-direction:column;height:calc(100vh - var(--header-h) - var(--filter-bar-h, 90px));}
+      #map{flex:none;height:55vh;}
+      #sidebar{width:100%;height:45vh;border-left:none;border-top:1px solid var(--border);transform:none!important;}
+      .map-legend{bottom:46vh;left:10px;padding:7px 10px;}
+      #sidebar-toggle{display:flex;align-items:center;justify-content:center;}
+      .leaflet-popup-content-wrapper{min-width:220px;max-width:280px;}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <img src="logo_minculturas.png" alt="Ministerio de las Culturas" class="logo-minca"
+         onerror="this.onerror=null;this.src='logo_culturas_blanco.png'"/>
+    <div class="header-title">
+      <h1>Articulación Minculturas · Cierre de Gobierno</h1>
+      <p>Ministerio de las Culturas, las Artes y los Saberes · Junio 2026</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-chip"><span id="visible-count">86</span> eventos visibles</div>
+    <div class="stat-chip">🗓 Hasta el 30 Jun 2026</div>
+  </div>
+</header>
+
+<div id="filter-bar">
+  <span class="filter-label">📅 Fecha</span>
+  <div class="filter-group" id="date-filters">
+    <button class="filter-btn active" onclick="setDateFilter('all')" id="btn-all">Todas</button>
+    <button class="filter-btn" onclick="setDateFilter('today')" id="btn-today">Hoy</button>
+    <button class="filter-btn" onclick="setDateFilter('week')" id="btn-week">7 días</button>
+    <button class="filter-btn" onclick="setDateFilter('jun5-11')" id="btn-jun5-11">5–11 Jun</button>
+    <button class="filter-btn" onclick="setDateFilter('jun12-18')" id="btn-jun12-18">12–18 Jun</button>
+    <button class="filter-btn" onclick="setDateFilter('jun19-25')" id="btn-jun19-25">19–25 Jun</button>
+    <button class="filter-btn" onclick="setDateFilter('jun26-30')" id="btn-jun26-30">26–30 Jun</button>
+  </div>
+  <div class="filter-divider"></div>
+  <span class="filter-label">📍 Ciudad</span>
+  <select class="filter-select" id="city-filter" onchange="setCityFilter(this.value)">
+    <option value="all">Todas las ciudades</option>
+  </select>
+  <div class="filter-divider"></div>
+  <span class="filter-label">🏛 Área</span>
+  <div class="area-dropdown-wrapper" id="area-dropdown-wrapper">
+    <button class="area-dropdown-btn" id="area-dropdown-btn" onclick="toggleAreaDropdown(event)">Todas las áreas</button>
+    <div class="area-dropdown-panel" id="area-dropdown-panel">
+      <div class="area-panel-header">
+        <span>Filtrar por área encargada</span>
+        <button class="area-clear-btn" onclick="clearAreaFilter()">Limpiar</button>
+      </div>
+      <div class="area-options-list" id="area-options-list"></div>
+    </div>
+  </div>
+  <div class="filter-divider"></div>
+  <input type="text" id="search-input" placeholder="🔍 Buscar..." oninput="applyFilters()"/>
+  <div class="filter-divider"></div>
+  <div class="view-toggle">
+    <button class="view-btn active" id="view-list-btn" onclick="switchView('list')" title="Lista">☰</button>
+    <button class="view-btn" id="view-cal-btn" onclick="switchView('calendar')" title="Calendario">📆</button>
+  </div>
+</div>
+
+<div class="main-layout">
+  <div id="map"></div>
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h3>📋 Eventos</h3>
+      <span id="events-count">86</span>
+    </div>
+    <div id="events-list"></div>
+    <div id="calendar-view"></div>
+    <div id="no-results">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px;opacity:0.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <p>No hay eventos para los filtros aplicados</p>
+    </div>
+  </div>
+</div>
+
+<div class="map-legend" id="map-legend">
+  <h4>Referencias</h4>
+  <div class="legend-item"><div class="legend-dot" style="background:#F5C842"></div><span>Evento único</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2156A5;border:2px solid #F5C842"></div><span>Varios eventos (clic → zoom)</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4ECDC4;opacity:0.7"></div><span>Virtual / Nacional</span></div>
+</div>
+
+<button id="sidebar-toggle" onclick="toggleMobileSidebar()" title="Ver lista">☰</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+// ============================================================
+// DATOS — 86 EVENTOS REALES DEL CSV
+// ============================================================
+const EVENTOS_RAW = [
+  {id:"1",area:"Despacho de la Ministra",evento:"Semana de la Red Intercultural Juvenil Día 1 Nodo Andina: RAÍZ ANDINA-Feria Itinerante de Arte Joven",descripcion:"a. Circuito de Ferias Simultáneas: Feria juvenil biocultural \"Lagunillas: Circuito de emprendimiento vivo, autogobernanza, festival de artes escénicas y activación del espacio público.b. Feria Gráfica Intercultural: Plataforma para 15 emprendimientos gráficos, regionales, estampado, música, teatro callejero y espacios de socialización comunitaria.c. Feria Intercultural Juvenil \"Un salto al Escenario\": Evento en el Teatro Fahrenheit 451 con franja de circulación (6 piezas escénicas y 6 emprendimientos) y franja académica de formación y financiación.",fecha:"13/06/2026",lugar:"a. Armero Tolima, b. Sopó Cundinamarca, c. Chía Cundinamarca",hora:"Entre las 8 AM y las 9 PM",lat:4.8629,lng:-73.926,isVirtual:false},
+  {id:"2",area:"Dirección de Patrimonio y Memoria",evento:"foro \"EL ACUERDO VIVO. Gobernanza, integridad cultural y vitalidad de saberes: Visiones para el futuro del PCCC\" Paisaje Cultural Cafetero de Colombia",descripcion:"En conmemorar los 15 años de la inscripción del Paisaje Cultural Cafetero en la Lista de Patrimonio Mundial de la Unesco. Lo organiza la gobernación para hablar de dos temas principales: Turismo cultural y comunitario y Catastro Multipropósito. Aún está por confirmar Población de Armenia aproximadamente 50 personas",fecha:"27/06/2026",lugar:"Armenia en lugar por precisar",hora:"8 AM a 12M",lat:4.5339,lng:-75.6811,isVirtual:false},
+  {id:"3",area:"GCAI",evento:"Embajadores culturales: Colombia en el mundo",descripcion:"El espacio permitirá presentar los alcances de los estímulos, resolver inquietudes sobre su ejecución y compartir herramientas para fortalecer la participación de los proyectos en escenarios internacionales. Asimismo, será una oportunidad para reconocer a las y los beneficiarios como parte de una red de agentes culturales que contribuyen al diálogo, la cooperación y la proyección internacional de Colombia a través de las culturas, las artes y los saberes.",fecha:"09/06/2026",lugar:"Ministerio/virtual (Híbrido)",hora:"Franja de la mañana",lat:4.5709,lng:-74.2973,isVirtual:true},
+  {id:"4",area:"DACMI - Grupo Comunicación, cultura y territorio - Línea Comunicación, Infancia y Juventud",evento:"Historias que Transforman la Escuela: Experiencias de Creación y formación audiovisual.",descripcion:"Este será un encuentro virtual con transmisión a través de las redes sociales de la DACMI, cuyo propósito es dar a conocer experiencias de formación y creación audiovisual desarrolladas en entornos escolares, en colaboración con el programa Artes para la Paz y con docentes que hacen parte de la Red de Maestros Creadores de Audiovisuales.Durante el espacio de conversación se contará con la participación de un artista formador que desarrolla sus procesos en el departamento de Santander, quien compartirá la importancia de la educación audiovisual en la escuela y las diversas formas de creación que han surgido en su trayectoria.Adicionalmente, se contará con la participación de una docente, una estudiante y un padre de familia de una institución educativa del departamento de Córdoba. Esta comunidad educativa ha desarrollado, durante varios años, procesos de radio escolar y cine, y ha sido beneficiaria del programa Artes para la Paz mediante una dotación que ha fortalecido su trabajo.Con la docente se dialogará sobre cómo la iniciativa de la Red ha contribuido al fortalecimiento y la visibilización de su experiencia, así como al impacto que ha tenido la dotación en el desarrollo creativo. Por su parte, con la estudiante y el padre de familia se abordarán las transformaciones generadas a partir del proceso, las formas de participación y las proyecciones y sueños en torno al trabajo audiovisual.Descripción de la REDLa Red de Maestros Creadores de Audiovisuales surge en marzo de 2025 a partir de una convocatoria del Ministerio de las Culturas, las Artes y los Saberes y el Ministerio de Educación Nacional, que reunió a docentes con experiencias de creación audiovisual en contextos escolares y comunitarios de distintas regiones del país. Desde entonces, la RED se ha consolidado con la participación de 54 maestras y maestros de 17 departamentos, organizados en comités de investigación, fortalecimiento, comunicación y circulación. Asimismo, se ha logrando la sistematización de 19 experiencias pedagógicas en la publicación Cuando los maestros cambian el mundo, cuya publicación se proyecta para el segundo semestre del año.La RED tiene como objetivo promover una cultura audiovisual en las instituciones educativas a partir del fortalecimiento de capacidades, la alfabetización digital y la construcción de acciones colectivas de incidencia e identidad regional, acordes con las particularidades de cada contexto, contribuyendo a la memoria y al empoderamiento de las y los estudiantes como agentes de cambio en sus comunidades.",fecha:"09/06/2026",lugar:"Encuentro virtual con transmisión a través de las redes sociales de la DACMI.",hora:"6:30 p.m. a 7:30 p.m.",lat:4.5709,lng:-74.2973,isVirtual:true},
+  {id:"5",area:"Archivo General de la Nación",evento:"Lanzamiento del Archivo Digital Nacional: un nuevo ecosistema para preservar y acceder a la memoria documental del país.",descripcion:"Webinar virtual para el lanzamiento de ADN  DATAVIVA DIGITAL, una plataforma tecnológica orientada a facilitar el acceso consulta y preservación del patrimonio documental digital del país. Población: Investigadores.",fecha:"09/06/2026",lugar:"Virtual",hora:"11:00 a.m - 1:00 p.m",lat:4.5709,lng:-74.2973,isVirtual:true},
+  {id:"6",area:"Archivo General de la Nación",evento:"Conversatorio para la entrega del fondo Galeón Televisión",descripcion:"Conversatorio para entrega del fondo Galeón Televisión, digitalizado junto a la Fundación Patrimonio Fílmico Colombiano, el cual se entregará la copia digital y las cintas al Archivo Histórico del Magdalena. Participará el director Francisco Flórez. Población: ciudadanía de Santa Marta y Magdalena",fecha:"09/06/2026",lugar:"Archivo Histórica de Magdalena (Santa Marta)",hora:"5:00 p.m - 7:00 p.m",lat:11.2408,lng:-74.199,isVirtual:false},
+  {id:"7",area:"Grupo de Patrimonio Cultural Inmaterial",evento:"	Intercambio Internacional de Parteras Tradicionales África . Colombia	II Encuentro Nacional de Partería Tradicional",descripcion:"Durante la semana del 8 al 12 de junio en el distrito de Buenaventura se realizará el Intercambio Internacional de parteras tradicionales África  Colombia y el II Encuentro Nacional de Partería Tradicional, en miras de seguir consolidando las acciones de salvaguardia paras la partería tradicional.La población convocada son parteras indígenas, afro y campesinas y delegaciones africanas de los siguientes países Ghana, Togo, Nigeria, Senegal y Etiopia.",fecha:"09/06/2026",lugar:"Auditorio Banco de la República, Buenaventura, Valle del Cauca",hora:"9:00am - 6:00pm",lat:3.8806,lng:-77.0312,isVirtual:false},
+  {id:"8",area:"Archivo General de la Nación",evento:"Jornada de socialización de la acción territorial de archivos en el departamento del Meta",descripcion:"El AGN participa en esta jornada de socialización en el Meta  para divulgar las acciones que se han realizado en el departamento  en materia de inspección, vigilancia y control de la función archivística.",fecha:"10/06/2026",lugar:"Auditorio de la Gobernación del Meta",hora:"9:00 a.m - 5:00 p.m",lat:4.142,lng:-73.6266,isVirtual:false},
+  {id:"9",area:"Archivo General de la Nación",evento:"Archivos que construyen nación: el acompañamiento del AGN al Archivo Histórico de la Universidad de Cartagena",descripcion:"Oficialización del ingreso del Archivo Histórico de la Universidad de Cartagena en el Registro Nacional de Archivos Históricos Colombianos.",fecha:"12/06/2026",lugar:"Univeridad de Cartagena",hora:"Por confirmar",lat:10.391,lng:-75.4794,isVirtual:false},
+  {id:"10",area:"Archivo General de la Nación",evento:"Entrega por parte de la CAF de los documentos históricos digitalizados del Archivo de Indias sobre Santa Marta",descripcion:"Entrega por parte de la CAF de los documentos históricos digitalizados del Archivo de Indias sobre Santa Marta. Población beneficiada: investogadores.",fecha:"11/06/2026",lugar:"Oficinas de la CAF",hora:"Por confirmar",lat:4.61,lng:-74.075,isVirtual:false},
+  {id:"11",area:"Archivo General de la Nación",evento:"Evento desclasificación archivos de inteligencia y contrainteligencia",descripcion:"Evento con la participación de la ministra Yannai Kadamani y el presidente Gustavo Petro, para la desclasificación de los archivos de inteligencia y Evento desclasificación archivos de inteligencia y contrainteligencia del extinto DAS. Población beneficiadas Victimas",fecha:"26/06/2026",lugar:"Casa de Armas, Presidencia",hora:"Por confirmar",lat:4.5982,lng:-74.076,isVirtual:false},
+  {id:"12",area:"MUSEO COLONIAL",evento:"FESTIVAL DE LO SAGRADO UNIVERSAL: Meditación y charla Silencio y quietud: Semillas para La Paz, desde la experiencia del Zen",descripcion:"Propone un espacio de contemplación interior a través de la práctica de la tradición budista Soto Zen de Japón. La jornada iniciará con una introducción a la postura de Zazen, guiada por el monje Hosh? (Juan Pablo) Arredondo, quien compartirá las bases de esta tradición meditativa desde la experiencia directa a través de la unidad cuerpo/mente, en silencio, quietud y atención plena. Posteriormente, la monja Jôkô (Clara) Cortés B. realizará una lectura del texto: La Paz y la Reconciliación: Una Perspectiva Budista, del Ven. Maestro Densho Quintero, Abad de la Comunidad Soto Zen de Colombia, el cual invita a reconocer la quietud interior como un camino posible hacia la convivencia consciente y la transformación personal y colectiva. Se convoca a jovenes, adultos y adultos mayores.",fecha:"06/06/2026",lugar:"AUDITORIO MUSEO COLONIAL",hora:"2,50 - 3,5O PM",lat:4.5971,lng:-74.0761,isVirtual:false},
+  {id:"13",area:"Equipa de Paz y Cuidado",evento:"Salpiconada por la vida",descripcion:"jornada de sensbilización en ciclovia con la participacion de agrupaciones musicales, dj set y compartir del alimento, tambien durante la jornada habrá musica a cargo de un dj set y  un sound system",fecha:"08/06/2026",lugar:"Bogotá- punto CC el Edén Ruta Ciclovía",hora:"\"9:00 am 14:00 pm\"",lat:4.711,lng:-74.0721,isVirtual:false},
+  {id:"14",area:"Equipa de Paz y Cuidado",evento:"Caravana Carnaval por la vida",descripcion:"recorrido entre barrios con presentaciones musicalesartisticas y culturales con organizaciones comunitarias de las localidades del sur oriente de la ciudad de bogotá",fecha:"14/06/2026",lugar:"Bogotá- Rafael Uribe- Antonio Nariño-Puente Aranda inicio Calle 27 sur con caracas",hora:"\"9:00 am 14:00 pm\"",lat:4.711,lng:-74.0721,isVirtual:false},
+  {id:"15",area:"MUSEO SANTA CLARA",evento:"FESTIVAL DE LO SAGRADO UNIVERSAL: Exposición Concordancia Vital: Lo sagrado en María Teresa Hincapié",descripcion:"Apertura de la exposición Concordancia Vital: Lo sagrado en María Teresa Hincapié La muestra reúne una selección de acciones, fotografías y registros en video de María Teresa Hincapié (Armenia, 1954  Bogotá, 2008), figura fundacional del performance latinoamericano. Las obras, realizadas entre 1992 y 2006, corresponden a un periodo en el que la artista orientó su práctica hacia la exploración de lo sagrado. En ellas, caminar, ordenar, limpiar, habitar se vuelven actos de conciencia: una ética del cuidado opuesta al acelere contemporáneo. Dirigida al público general, artistas, investigadores y visitantes interesados en arte contemporáneo y patrimonio.Curaduría de Paula Bossa y Pavel Vernaza de la Galería Casas Reigner.",fecha:"04/06/2026",lugar:"Museo Santa Clara- Coro alto",hora:"9 a.m. - 4,30 p.m.",lat:4.5965,lng:-74.0754,isVirtual:false},
+  {id:"16",area:"Equipa de Paz y Cuidado",evento:"Velada Artistica por la vida y por la paz",descripcion:"Espacio de trabajo con jovenes de Ocaña que hacen parte del programa de jovenes en paz, en esta articulación también participan organizaciones de la Red Nacional de Cultura de Paz con presentaciones artisticas y culturales.",fecha:"11/06/2026",lugar:"Ocaña- Comuna 4",hora:"\"16:00 pm 23:00 pm\"",lat:8.2341,lng:-73.3578,isVirtual:false},
+  {id:"17",area:"Dirección de Fomento Regional",evento:"Olla comunitaria por la Dignidad Mayor",descripcion:"Socialización de los logros del MInisterio de Culturas en particular lo relacionado con CUltura es Dignidad Mayor y Cultura de Paz",fecha:"12/06/2026",lugar:"Bucaramanga-Barrio Albania",hora:"11am-2pm",lat:7.1254,lng:-73.1198,isVirtual:false},
+  {id:"18",area:"Equipa de Paz y Cuidado",evento:"Velada Artistica por la vida y por la paz",descripcion:"Socialización a artistas de Bucaramanga de los alcances del programa Artes para la Paz, Programa Nacional de Concertacion y Convocatoria Jovenes por el Cambio",fecha:"11/06/2026",lugar:"Bucaramanga- Barrio por definir",hora:"7pm-11pm",lat:7.1254,lng:-73.1198,isVirtual:false},
+  {id:"19",area:"Equipa de Paz y Cuidado",evento:"Noche de Cine por la Cultura de Paz",descripcion:"Proyección de cortos relacionados con la Cultura de Paz, socialización de la convocatoria Jóvenes por el cambio",fecha:"18/06/2026",lugar:"Sincelejo",hora:"7pm",lat:9.3047,lng:-75.3978,isVirtual:false},
+  {id:"20",area:"Equipa de Paz y Cuidado",evento:"Tardeo por la vida  y por la paz",descripcion:"charlatorio sobre la cultura de paz, proyección de cortometrajes sobre cultura de paz.",fecha:"18/06/2026",lugar:"Cucuta",hora:"5:00 pm",lat:7.8939,lng:-72.5078,isVirtual:false},
+  {id:"21",area:"Equipa de Paz y Cuidado",evento:"Tardeo por la vida  y por la paz",descripcion:"charlatorio sobre la cultura de paz, proyección de cortometrajes sobre cultura de paz.",fecha:"14/06/2026",lugar:"Cartago",hora:"2pm -6pm",lat:4.7455,lng:-75.9121,isVirtual:false},
+  {id:"22",area:"MUSEO SANTA CLARA",evento:"FESTIVAL DE LO SAGRADO UNIVERSAL:                                                                                          Activaciones de la Exposición \"Concordancia vital\" de Maria Teresa Hincapié",descripcion:"FESTIVAL DE LO SAGRADO UNIVERSAL: Activaciones y mediaciones en torno a la exposición Concordancia Vital: Lo sagrado en María Teresa Hincapié. Espacios de encuentro con los públicos para profundizar en los contenidos de la muestra. Dirigido al público general.Dirigida al público general, artistas, investigadores y visitantes interesados en arte contemporáneo y patrimonio.",fecha:"05/06/2026",lugar:"MUSEO SANTA CLARA - Coro alto",hora:"3 p.m.",lat:4.5965,lng:-74.0754,isVirtual:false},
+  {id:"23",area:"MUSEO SANTA CLARA",evento:"FESTIVAL DE LO SAGRADO UNIVERSAL: Activaciones y mediaciones en torno a la exposición Concordancia Vital: Lo sagrado en María Teresa Hincapié.",descripcion:"Espacios de encuentro con los públicos para profundizar en los contenidos de la muestraDirigida al público general, artistas, investigadores y visitantes interesados en arte contemporáneo y patrimonio.",fecha:"06/06/2026",lugar:"AUDITORIO DEL MUSEO COLONIAL",hora:"2 p.m.",lat:4.5971,lng:-74.0761,isVirtual:false},
+  {id:"24",area:"Museo Santa Clara",evento:"Recorridos comentados por la exposición queer Entonces llamó a un arcángel.",descripcion:"FESTIVAL DE LO SAGRADO UNIVERSAL:  Activaciones y mediaciones en torno a la exposición \"Entonces llamó a un arcángel\". Espacios de mediación y diálogo en torno a la exposición Entonces llamó a un arcángel, una muestra que propone un encuentro entre el arte colonial y miradas contemporáneas sobre el cuerpo, la espiritualidad y la disidencia. A través de pintura, instalación y video, invita a recorrer la antigua iglesia desde nuevas lecturas, activando diálogos entre ángeles y arcángeles coloniales y corporalidades actuales, en un espacio que conecta pasado y presente. Dirigido al público general, estudiantes, investigadores, comunidades artísticas y visitantes interesados en las relaciones entre patrimonio, arte contemporáneo y diversidad.",fecha:"14/06/2026",lugar:"Museo Santa Clara",hora:"2:00 p.m a 4:30 p.m",lat:4.5965,lng:-74.0754,isVirtual:false},
+  {id:"25",area:"Museo Colonial",evento:"Recital de Coros Presentación de un Coro mixto SATB",descripcion:"El Coro mixto STAB (Soprano, Contralto, Tenor y Bajo) conformado por 16 jóvenes, interpretará un programa temático centrado en el amor, con obras de distintas épocas y tradiciones, incluyendo repertorio basado en poesía latinoamericana y española. Concierto abierto al público general que busca dar a conocer el proyecto y acercar la música coral a la comunidad.",fecha:"14/06/2026",lugar:"Auditorio Museo Colonial",hora:"11:00 a.m.  2:30 p.m.",lat:4.5971,lng:-74.0761,isVirtual:false},
+  {id:"26",area:"Museo Colonial",evento:"Concierto Academia Artística?Scherzando",descripcion:"Concierto gratuito y familiar en el que niños, jóvenes y adultos interpretarán un repertorio musical pensado para públicos de todas las edades, en una mañana de encuentro entre música, patrimonio y formación artística.",fecha:"07/06/2026",lugar:"Museo Colonial",hora:"09:00 A.M. a 10:30 A. M.",lat:4.5971,lng:-74.0761,isVirtual:false},
+  {id:"27",area:"MUSEO SANTA CLARA",evento:"FESTIVAL DE LO SAGRADO UNIVERSAL: Activaciones y mediaciones de la Exposición \"Concordancia vital\"",descripcion:"Exposición Concordancia Vital: Lo sagrado en María Teresa Hincapié. Espacios de encuentro con los públicos para profundizar en los contenidos de la muestra. Dirigido al público general.",fecha:"07/06/2026",lugar:"MUSEO SANTA CLARA Coro alto",hora:"2 p.m.",lat:4.5965,lng:-74.0754,isVirtual:false},
+  {id:"28",area:"Museo Colonial",evento:"Recorrido comentado: Cuerpos en fiesta, mundos en disputa: El Corpus Chisti colombiano",descripcion:"Recorrido temático dirigido por Nataly Cardozo, antropóloga, que invita a reflexionar sobre cómo han coexistido en una misma celebración religiosa diversas culturas y cosmovisiones. A partir del Corpus Christi en Colombia, festividad del calendario litúrgico católico, se explorarán los cruces entre prácticas, creencias y saberes indígenas, afro, campesinos y europeos que se han entrelazado desde la época colonial. Actividad dirigida al público general interesado en historia, patrimonio, antropología y diversidad cultural.",fecha:"07/06/2026",lugar:"Museo Colonial",hora:"2:00 p.m.  3:30 p.m.",lat:4.5971,lng:-74.0761,isVirtual:false},
+  {id:"29",area:"Museos de la Nación",evento:"Campaña #MuseosSomos*Lugar de realización*Redes sociales de los museos.*Hora estimada de inicio y finalización*Todo el día en parrilla",descripcion:"Una campaña digital (entre el 9 y el 15 de junio) en la que los museos de la nación mostrarán lo que se ha ganado durante estos 4 años, a través de 4 enfoques: Aumento presupuestal, Protección al Patrimonio cultural, Patrimonio natural y Accesibilidad y representatividad. Una campaña de seducción para atraer a más personas a los museos.",fecha:"09/06/2026",lugar:"Redes sociales de los museos",hora:"Durante el día en parrilla",lat:4.5709,lng:-74.2973,isVirtual:true},
+  {id:"30",area:"Museos de la Nación",evento:"Torneo #MuseosEnLaJugada",descripcion:"Aprovechando el Mundial de Fútbol, los Museos de la Nación haremos una gran copa digital para que la gente participe por redes. Primero, en junio, cada museo hará una copa interna, para enfrentar entre sí 8 piezas que están en la reserva. Cada enfrentamiento sera decidido por votos del público. La pieza ganadora pasará de la reserva a la colección exhibida del museo. La gente podrá ir a visitar esa pieza a los museos. Luego, en julio, habra una gran copa para enfrentar a las piezas elegidas de los 12 museos, para elegir a la gran pieza ganadora. Esta actividad busca divulgar las colecciones fomentando la apropiación social del patrimonio cultural y unir los públicos de los museos para tener un mayor alcance.",fecha:"11/06/2026",lugar:"Redes sociales de los museos",hora:"Durante el día en parrilla",lat:4.5709,lng:-74.2973,isVirtual:true},
+  {id:"31",area:"Biblioteca Nacional de Colombia",evento:"¿Qué abrazan las bibliotecas?",descripcion:"La iniciativa busca generar diálogos sociales alrededor del papel de las bibliotecas en nuestro país, contribuir al reconocimiento de su incidencia en las vidas individuales y en la vida comunitaria, así como de su contribución a la garantía de derechos educativos y culturales, en su relación con otros derechos humanos, y al cuidado de la vida en todas sus manifestaciones.",fecha:"11/06/2026",lugar:"Bogotá, Biblioteca Comunitaria Kennedy",hora:"5 p.m.",lat:4.711,lng:-74.0721,isVirtual:false},
+  {id:"32",area:"Biblioteca Nacional de Colombia",evento:"¿Qué abrazan las bibliotecas?",descripcion:"La iniciativa busca generar diálogos sociales alrededor del papel de las bibliotecas en nuestro país, contribuir al reconocimiento de su incidencia en las vidas individuales y en la vida comunitaria, así como de su contribución a la garantía de derechos educativos y culturales, en su relación con otros derechos humanos, y al cuidado de la vida en todas sus manifestaciones.",fecha:"12/06/2026",lugar:"Barranquilla, Biblioteca Pública Piloto",hora:"5 pm",lat:10.9685,lng:-74.7813,isVirtual:false},
+  {id:"33",area:"Biblioteca Nacional de Colombia",evento:"¿Qué abrazan las bibliotecas?",descripcion:"La iniciativa busca generar diálogos sociales alrededor del papel de las bibliotecas en nuestro país, contribuir al reconocimiento de su incidencia en las vidas individuales y en la vida comunitaria, así como de su contribución a la garantía de derechos educativos y culturales, en su relación con otros derechos humanos, y al cuidado de la vida en todas sus manifestaciones.",fecha:"16/06/2026",lugar:"Ibagué, Biblioteca Municipal Soledad Rengifo",hora:"5 pm",lat:4.4389,lng:-75.2322,isVirtual:false},
+  {id:"34",area:"Biblioteca Nacional de Colombia",evento:"¿Qué abrazan las bibliotecas?",descripcion:"La iniciativa busca generar diálogos sociales alrededor del papel de las bibliotecas en nuestro país, contribuir al reconocimiento de su incidencia en las vidas individuales y en la vida comunitaria, así como de su contribución a la garantía de derechos educativos y culturales, en su relación con otros derechos humanos, y al cuidado de la vida en todas sus manifestaciones.",fecha:"17/06/2026",lugar:"Neiva, Biblioteca Departamental Olegario Rivera",hora:"5 pm",lat:2.9273,lng:-75.2819,isVirtual:false},
+  {id:"35",area:"Biblioteca Nacional de Colombia",evento:"¿Qué abrazan las bibliotecas?",descripcion:"La iniciativa busca generar diálogos sociales alrededor del papel de las bibliotecas en nuestro país, contribuir al reconocimiento de su incidencia en las vidas individuales y en la vida comunitaria, así como de su contribución a la garantía de derechos educativos y culturales, en su relación con otros derechos humanos, y al cuidado de la vida en todas sus manifestaciones.",fecha:"18/06/2026",lugar:"Tuluá, Biblioteca Municipal Daniel Potes",hora:"5 pm",lat:4.085,lng:-76.1947,isVirtual:false},
+  {id:"36",area:"Biblioteca Nacional de Colombia",evento:"¿Qué abrazan las bibliotecas?",descripcion:"La iniciativa busca generar diálogos sociales alrededor del papel de las bibliotecas en nuestro país, contribuir al reconocimiento de su incidencia en las vidas individuales y en la vida comunitaria, así como de su contribución a la garantía de derechos educativos y culturales, en su relación con otros derechos humanos, y al cuidado de la vida en todas sus manifestaciones.",fecha:"19/06/2026",lugar:"Funza, Biblioparque Marqués de San Jorge",hora:"5 pm",lat:4.7217,lng:-74.204,isVirtual:false},
+  {id:"37",area:"Museos Independencia Casa del Florero y Quinta de Bolívar",evento:"Charla Tierra caliente: El Fin del jardín tropical",descripcion:"Desde la investigación Tierra Caliente: El fin del jardín tropical, se invita a repensar los imaginarios del trópico en América Latina. La población convocada son estudiantes, docentes, investigadores de ciencias sociales, humanidades, artes visuales, historia del arte, ecología y estudios ambientales de la Universidad Javeriana.",fecha:"10/06/2026",lugar:"Museo de la Independencia Casa del Florero Cra. 7 #11-28 Bogotá D.C.",hora:"2:30 p.m. - 4:00 p.m.",lat:4.5981,lng:-74.0756,isVirtual:false},
+  {id:"38",area:"Museo Nacional de Colombia",evento:"Inauguración de la exposición Por arte de magia, un homenaje al legado de Gustavo Lorgia.",descripcion:"La inauguración contará con la participación de tres magos, además magos en el vestíbulo y coctel. Población: universidades, instituciones educativas, empresas, bancos,  agremiaciones de comerciantes e industriales, ASCUN, Cámara de Comercio de Bogotá, federaciones, periodistas, industrias culturales y creativas, sector turístico (hoteles, restaurantes, agencias de viajes), coleccionistas y personas interesadas en el patrimonio.",fecha:"10/06/2026",lugar:"Auditorio Teresa Cuervo y el vestíbulo del Museo Nacional.",hora:"6:00 p.m.",lat:4.6267,lng:-74.065,isVirtual:false},
+  {id:"39",area:"Museo Nacional de Colombia",evento:"Caminos de agua. Páramos: guardianes que recargan vida. Recorrido Camino Guadalupe-Aguanoso  Recorrido por los cerros orientales. Actividad en alianza con: Acueducto de Bogotá, Jardín Botánico de Bogotá y la Secretaría Distrital de Ambiente. Invitado: Edwinson Campillo, mediador comunitario del pueblo Guna, Darién.",descripcion:"Una experiencia para comprender el papel de los páramos en la infiltración, regulación y recarga del agua que abastece la ciudad. Descubre estos territorios como guardianes invisibles del ciclo hídrico y su importancia para Bogotá.",fecha:"14/06/2026",lugar:"Camino Guadalupe-Aguanoso (cerros orientales)",hora:"7:30 a.m.",lat:4.62,lng:-74.05,isVirtual:false},
+  {id:"40",area:"Museos Quinta de Bolívar e Independencia Casa del Florero",evento:"Museos en Territorios - Charalá",descripcion:"Encuentro en Charalá (Santander) con organizaciones comunitarias, actores culturales e instituciones educativas del territorio para el proyecto Mujeres Libertarias: Creadoras de Resistencia. Este proyecto busca fortalecer la memoria histórica, el patrimonio cultural y la creación artística en este territorio mediante un proceso participativo que visibilice el papel de las mujeres en la resistencia histórica y promueva la transmisión de saberes tradicionales como el telar guane a nuevas generaciones.",fecha:"09/06/2026",lugar:"Charalá, Santander",hora:"2:00 p.m.",lat:6.2867,lng:-73.146,isVirtual:false},
+  {id:"41",area:"Museo Nacional de Colombia",evento:"CalmArte: yoga en el Museo Nacional de Colombia",descripcion:"Actividad que promueve la práctica de yoga básico de alineación, en el que se busca liberar las tensiones que se cargan en el día a día. Se enfoca en el mapa del estrés: el cuello y la espalda alta.",fecha:"14/06/2026",lugar:"La Rotonda del Museo Nacional de Colombia",hora:"9:00 a.m.",lat:4.6267,lng:-74.065,isVirtual:false},
+  {id:"42",area:"Museos Quinta de Bolívar e Independencia Casa del Florero",evento:"\"Encuentro internacional de mujeres líderes y constructoras de ciudadanía\"",descripcion:"Visita red de Embajadoras y de empresarias extranjeras en Colombia.Mercedes Cristina Corominas Galloso (Uruguay)Catarina de Mendoza y Arruda Oliveira Rodrigues (Portugal)Marianick Tremblay (Canadá)Hülya Helena Storm (Suecia)Reina Buijs (Países Bajos)María Cristina Castro Villafranca (Costa Rica)María Antonia Navarro (Honduras)",fecha:"16/06/2026",lugar:"Museos Casa Quinta de Bolívar e Independencia Casa del Florero",hora:"8:00 a.m. - 12:00 m",lat:4.602,lng:-74.061,isVirtual:false},
+  {id:"43",area:"Museo Nacional de Colombia",evento:"Un-gar. Obra del programa Nidos del Idartes.",descripcion:"Obra de teatro en la que tres personajes que juegan a ser grandes artistas le dan vida a Uh-Gar, un monstruo cachorro que quiere jugar con los niños y las niñas. A través del dibujo y la música, se va construyendo la identidad de este extraño pero amoroso ser. Población: universidades, instituciones educativas, empresas, bancos,  agremiaciones de comerciantes e industriales, ASCUN, Cámara de Comercio de Bogotá, federaciones, periodistas, industrias culturales y creativas, sector turístico (hoteles, restaurantes, agencias de viajes), coleccionistas y personas interesadas en el patrimonio.",fecha:"14/06/2026",lugar:"Auditorio Teresa Cuervo del Museo Nacional",hora:"11:30 a.m.",lat:4.6267,lng:-74.065,isVirtual:false},
+  {id:"44",area:"Dirección de Patrimonio y Memoria - Grupo de Investigación y Documentación",evento:"2 sesión ordinaria del Consejo Nacional de Patrimonio Cultural",descripcion:"Sesión ordinaria del CNPC que convoca a los integrantes de dicho organismo asesor, preside la viceministra de patrimonio y ejerce secretaría técnica la directora de patrimonio y memoria",fecha:"26/06/2026",lugar:"Teatro Colón",hora:"8:00 a.m. a 12:00 m.",lat:4.5975,lng:-74.0735,isVirtual:false},
+  {id:"45",area:"Museo Casa Natal del General Santander de la Unidad Administrativa Especial Museo Nacional",evento:"Itinerancias: \"Patrimonios vivos\". Biblioteca Pública Julio Pérez Ferrero y Área Cultural del Banco de República.",descripcion:"Exposición itinerante que resalta la riqueza natural de la región, enfocándose específicamente en el registro y reconocimiento de las aves que habitan el centro histórico de Villa del Rosario.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental, sector gubernamental.",fecha:"09/06/2026",lugar:"Museo Casa Natal del General Santander",hora:"5:00 p.m.",lat:7.8371,lng:-72.4767,isVirtual:false},
+  {id:"46",area:"Museo Casa Natal del General Santander de la Unidad Administrativa Especial Museo Nacional",evento:"Encuentros de formación Shortsfilms \"Memorias Audiovisuales del General Santander\"",descripcion:"Taller práctico de capacitación cinematográfica enfocado en la creación de cortometrajes. Su objetivo es dotar a los participantes de herramientas técnicas y narrativas para contar la historia y el impacto del General Santander desde una perspectiva audiovisual moderna. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"11/06/2026",lugar:"Museo Casa Natal del General Santander",hora:"5:00 p.m.",lat:7.8371,lng:-72.4767,isVirtual:false},
+  {id:"47",area:"Museos Quinta de Bolívar e Independencia Casa del Florero",evento:"Activación Mi territorio es patrimonio",descripcion:"Encuentro en Apía  Santuario - Balboa (Risaralda) con gestoras, gestores culturales, docentes, estudiantes y padres de familia con 3 escuelas de música para la activación del material pedagógico Mi territorio es patrimonio. Esta herramienta invita a reconocer el patrimonio en distintos niveles: lo que es propio, lo que compartimos como comunidad y lo que nos pertenece a todas y todos.",fecha:"16/06/2026",lugar:"Apía  Santuario - Balboa (Risaralda)",hora:"11:00 a.m.",lat:5.1003,lng:-75.9746,isVirtual:false},
+  {id:"48",area:"ICANH",evento:"Cátedra Caribe ICANH 2026: Patrimonios en el Cesar: acuerdos y desacuerdos en la protección de prácticas culturales.",descripcion:"La Cátedra Caribe ICANH se proyecta como un espacio académico de reflexión e intercambio orientado a promover investigaciones en y sobre el Caribe colombiano, articulando debates sobre las conflictividades, tensiones y particularidades que atraviesan las formas de vida regionales. En esta versión, la discusión estará centrada en los procesos de patrimonialización en el Cesar, entendidos como escenarios de disputa, negociación e intervención institucional que inciden directamente en las dinámicas culturales, políticas y económicas de la región",fecha:"05/06/2026",lugar:"Universidad Popular del Cesar",hora:"2:00 p.m. - 5:00 p.m",lat:10.4631,lng:-73.2532,isVirtual:false},
+  {id:"49",area:"Museo Casa Natal del General Santander",evento:"Activación de la huerta: \"Encuentros Creativos\" Reconoce el patrimonio con tus manos.",descripcion:"Talleres didácticos y artesanales diseñados para que los participantes exploren la identidad cultural y el patrimonio local a través de la experimentación táctil (como la arcilla, la pintura o la escultura), fomentando una apropiación sensible de la historia.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"12/06/2026",lugar:"Museo Casa Natal del General Santander",hora:"5:00 p.m.",lat:7.8371,lng:-72.4767,isVirtual:false},
+  {id:"50",area:"ICANH",evento:"Arqueología de los Andes: Arquitectura ancestral y resistencia indígena",descripcion:"En el marco de este evento se realizarán dos conferencias académicas: \"Arquitectura en ceniza volcánica. Recientes hallazgos en la sierra norte del Ecuador\" a cargo de la arqueóloga ecuatoriana María Fernanda Ugalde, y \"La organización y resistencia política mapuche durante el periodo colonial temprano\" presentada por el arqueólogo y antropólogo estadounidense Tom D. Dillehay. El objetivo de estas actividades es divulgar investigaciones recientes que aportan nuevas perspectivas para comprender las sociedades americanas, sus procesos históricos y su patrimonio cultural. Las conferencias están dirigidas a estudiantes, investigadores, docentes, profesionales de las ciencias sociales y humanas, gestores culturales y público interesado en la historia y la arqueología de América del Sur.",fecha:"06/06/2026",lugar:"Auditorio Paul Rivet ICANH",hora:"3:00pm a 5:00pm",lat:4.6477,lng:-74.0574,isVirtual:false},
+  {id:"51",area:"Museo de la Ciudad de Ocaña Antón García de Bonilla de la Unidad Administrativa Especial Museo Nacional",evento:"Taller de edición y fanzine: Leer es mi cuento",descripcion:"Actividad dirigida a niños y niñas entre los 7 y 12 años, pensada como un espacio creativo y pedagógico para fortalecer la comprensión lectora a través del cuento. Los participantes recibirán herramientas sencillas y dinámicas que les permitirán acercarse a la lectura de una manera más divertida, reflexiva y participativa.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"09/06/2026",lugar:"Museo de la Ciudad de Ocaña Antón García de Bonilla",hora:"11:00 a.m.",lat:8.2341,lng:-73.3578,isVirtual:false},
+  {id:"52",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Seminario narrativas periodisticas",descripcion:"Este espacio busca fortalecer las capacidades comunicativas y ampliar la difusión del patrimonio cultural en todas las regiones del país, reconociendo el papel fundamental que cumplen los medios de comunicación en la preservación, valoración y divulgación de los saberes y expresiones culturales patrimoniales.",fecha:"09/06/2026",lugar:"Facatativa - Cundinamarca",hora:"8am a 5pm",lat:4.8145,lng:-74.3565,isVirtual:false},
+  {id:"53",area:"ICANH",evento:"Encuentro intercultural sobre historias de poblamiento de La Lindosa",descripcion:"Con el objetivo de construir una historia amplia e intercultural de la Serranía de la Lindosa  se convoca a las comunidades campesinas e indígenas (Jiw y Tucano Oriental) de esta región a participar en una jornada para contar y compartir sus historias sobre el poblamiento de este territorio",fecha:"13/06/2026",lugar:"Serranía de la Lindosa",hora:"9:00am a 4:00pm",lat:2.6344,lng:-72.6437,isVirtual:false},
+  {id:"54",area:"Museo de la Ciudad de Ocaña Antón García de Bonilla de la Unidad Administrativa Especial Museo Nacional",evento:"Taller: Raíces en juego",descripcion:"Actividad recreativa y cultural orientada a recuperar y compartir los juegos tradicionales de la región como parte de la memoria y la identidad territorial. Se podrá disfrutar de rondas, juegos de habilidad, competencia sana y actividades colectivas que han hecho parte de la infancia de distintas generaciones. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"09/06/2026",lugar:"Museo de la Ciudad de Ocaña Antón García de Bonilla",hora:"11:00 a.m.",lat:8.2341,lng:-73.3578,isVirtual:false},
+  {id:"55",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Seminario narrativas periodísticas",descripcion:"Este espacio busca fortalecer las capacidades comunicativas y ampliar la difusión del patrimonio cultural en todas las regiones del país, reconociendo el papel fundamental que cumplen los medios de comunicación en la preservación, valoración y divulgación de los saberes y expresiones culturales patrimoniales.",fecha:"11/06/2026",lugar:"Girardot - Cundinamarca",hora:"8am a 5pm",lat:4.3034,lng:-74.8026,isVirtual:false},
+  {id:"56",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Seminario narrativas periodísticas",descripcion:"Este espacio busca fortalecer las capacidades comunicativas y ampliar la difusión del patrimonio cultural en todas las regiones del país, reconociendo el papel fundamental que cumplen los medios de comunicación en la preservación, valoración y divulgación de los saberes y expresiones culturales patrimoniales.",fecha:"18/06/2026",lugar:"Cartagena - Bolivar",hora:"8am a 5pm",lat:10.391,lng:-75.4794,isVirtual:false},
+  {id:"57",area:"Museo de la Ciudad de Ocaña Antón García de Bonilla de la Unidad Administrativa Especial Museo Nacional",evento:"Estudios sociales de la Región del Catatumbo",descripcion:"Espacio para socializar reflexiones, análisis y trabajos relacionados con la realidad social, histórica y territorial del Catatumbo, reconociendo la importancia de estudiar la región desde una mirada crítica, jurídica y contextualizada. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"11/06/2026",lugar:"Museo de la Ciudad de Ocaña Antón García de Bonilla",hora:"4:00 p.m.",lat:8.2341,lng:-73.3578,isVirtual:false},
+  {id:"58",area:"Casa Museo Alfonso López Pumarejo de la Unidad Administrativa Especial Museo Nacional",evento:"Inauguración de la exposición Aqua.",descripcion:"Un proyecto de la Red de Museos del Tolima con participación de reconocidos artistas del mundo. Se desarrollarán sesiones de pintura al aire libre para la ciudadanía hondana. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo de Cúcuta, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"11/06/2026",lugar:"Casa Museo Alfonso López Pumarejo",hora:"6:00 p.m.",lat:4.6667,lng:-74.0543,isVirtual:false},
+  {id:"59",area:"Museos Quinta de Bolívar e Independencia Casa del Florero",evento:"Taller Al pie de los cerros, a la orilla del río",descripcion:"Este taller propone redescubrir la historia oculta del barrio Las Aguas, marcada por el río San Francisco?Vicachá. Invita a reflexionar colectivamente sobre la naturaleza, derecho al agua y el sentido de pertenencia en la ciudad. Esta actividad se realiza con el Programa de Geografía de la Facultad de Ciencias Sociales y Humanas de la Universidad Externado de Colombia, quienes están desarrollando el Taller Líderes Ambientales: Geografías por el agua y la Tierra en donde participan aproximadamente 100  estudiantes de 9°, 10° y 11° de diferentes colegios acompañados por docentes,investigadores y el Jardín Botánico de Bogotá.",fecha:"05/06/2026",lugar:"Casa Museo Quinta de Bolívar",hora:"11:30 a.m.",lat:4.602,lng:-74.061,isVirtual:false},
+  {id:"60",area:"Casa Museo Alfonso López Pumarejo de la Unidad Administrativa Especial Museo Nacional",evento:"Mercadillo de la Casa López",descripcion:"Espacio para los emprendimientos culturales, de ciudadanía ambiental  y economía popular hondanos que promueven la sostenibilidad y el desarrollo social en el municipio. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"12/06/2026",lugar:"Casa Museo Alfonso López Pumarejo",hora:"11:00 a.m.",lat:4.6667,lng:-74.0543,isVirtual:false},
+  {id:"61",area:"Museos Casa Quinta de Bolívar e Independencia Casa del Florero",evento:"Inauguración muestra fotográfica ¡Presente! 30 años de marchas. Imágenes del silencio",descripcion:"Exposición fotográfica que propone un diálogo entre las memorias de Colombia y Uruguay, dos países atravesados por profundas heridas, pero también por poderosas formas de resistencia. Desde la emblemática Marcha del Silencio en Uruguay esta exposición nos recuerda que la memoria colectiva se convierte en puente entre países, generaciones y luchas compartidas. En paralelo, el Museo de Memoria de Montevideo, alberga la exposición itinerante \"Tejiendo paz, memoria y encuentro\" diseñada para dignificar a las víctimas del conflicto armado y relatar más de 80 años de historia de violencia en Colombia. Cuerpo diplomático Embajada Uruguay, subsecretaria de educación de Uruguay, Directora del MUME, cuerpos diplomáticos de otras embajadas en Bogotá y aliados.",fecha:"18/06/2026",lugar:"Museo de la Independencia Casa del Florero",hora:"4:00 p.m.",lat:4.5981,lng:-74.0756,isVirtual:false},
+  {id:"62",area:"Museo Juan del Corral",evento:"Taller de alfarería ancestral con el Hogar Juvenil Campesino",descripcion:"Aprendizaje de artes y oficios: tecnicas asociadas a la creación en barro, alfarería. Hogar juvenil Campesino.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"09/06/2026",lugar:"Museo Juan del Corral",hora:"3:00 p.m.",lat:6.557,lng:-75.8265,isVirtual:false},
+  {id:"63",area:"Museo Juan del Corral de la Unidad Administrativa Especial Museo Nacional",evento:"Semana de la Joyería: Talleres y conversatorios para emprendedores locales (13, 14 y 15 de junio)",descripcion:"Alianza para los procesos de formación de emprendedores locales y economíasa populares. Filigrana y Joyería. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"14/06/2026",lugar:"Museo Juan del Corral",hora:"10:00 a.m.",lat:6.557,lng:-75.8265,isVirtual:false},
+  {id:"64",area:"ICANH",evento:"Restitución colectiva de derechos territoriales y saberes sobre la etnoreparación. Lanzamiento del Boletín 04 - de la consulta al concepto-",descripcion:"Espacio de reflexión sobre el papel del conocimiento antropológico en la gestión de la diversidad cultural y los procesos de reparación colectiva en Colombia, en el marco del lanzamiento del cuarto boletín de la serie De la consulta al concepto antropológico, que analiza las solicitudes de conceptos y derechos de petición atendidas por el ICANH entre 2009 y 2026 y su incidencia en la toma de decisiones sobre derechos culturales y territoriales.",fecha:"19/06/2026",lugar:"Auditorio Paul Rivet ICANH",hora:"9:00am a 11:00am",lat:4.6477,lng:-74.0574,isVirtual:false},
+  {id:"65",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Relacionamiento internacional con embajadores y cooperación",descripcion:"Reuniones, llamadas y estrategia de relacionamiento internacional con embajadores y cooperación para que repliquen comunicaciones.",fecha:"05/06/2026",lugar:"Bogotá",hora:"Permanente hasta el 19 de junio",lat:4.711,lng:-74.0721,isVirtual:false},
+  {id:"66",area:"Museo Juan del Corral de la Unidad Administrativa Especial Museo Nacional",evento:"Exposición del Museo Afromóvil",descripcion:"Exposición de la Corporación Afropedagógica y Museo Afromóvil como estrategia de reparación de la memoria de las comunidades afrodescendientes.",fecha:"15/06/2026",lugar:"Museo Juan del Corral",hora:"11:00 a.m.",lat:6.557,lng:-75.8265,isVirtual:false},
+  {id:"67",area:"ICANH",evento:"Encuentro ecuménico de comunidades de fe sobre la cultura de paz",descripcion:"Espacio de diálogo e intercambio entre representantes de diferentes credos y tradiciones religiosas para reflexionar sobre los aportes de las comunidades de fe a la construcción de una cultura de paz, el respeto por la diversidad y la convivencia en Colombia.",fecha:"16/06/2026",lugar:"Soacha (Por confirmar)",hora:"2:00pm a 4:00pm",lat:4.579,lng:-74.2174,isVirtual:false},
+  {id:"68",area:"Casa Museo Guillermo León Valencia",evento:"Taller Jardines de Agustina",descripcion:"Espacio de sensibilización enfocado en la diferencia e identidad dirigido a jóvenes.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"10/06/2026",lugar:"Casa Museo Guillermo León Valencia",hora:"2:00 p.m.",lat:2.4448,lng:-76.6147,isVirtual:false},
+  {id:"69",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Reunión sociedad colombiana de arquitectos",descripcion:"Reunión sociedad colombiana de arquitectos",fecha:"10/06/2026",lugar:"Bogotá",hora:"2pm",lat:4.711,lng:-74.0721,isVirtual:false},
+  {id:"70",area:"Casa Museo Rafael Núñez de la Unidad Administrativa Especial Museo Nacional",evento:"Taller \"Champeta pal Barrio\"",descripcion:"Talleres y diálogos de saberes en el municipio de María la Baja sobre Champeta pal barrio en el que se integran procesos de memoria y formación artística, entendiendo la champeta como un proceso cultural de resistencia a la racialización, generando conversaciones del lugar del museo sobre conversaciones políticas en contexto con el territorio.",fecha:"09/06/2026",lugar:"Casa Museo Rafael Núñez",hora:"3:00 p.m.",lat:10.391,lng:-75.4794,isVirtual:false},
+  {id:"71",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Podcast Patrimonios Vivos",descripcion:"Lanzamiento del primer capitulo del podcast patrimonios vivos, el primero sobre centros históricos tiene como objetivo difundir, valorar y fortalecer el conocimiento sobre los centros históricos como espacios dinámicos donde convergen la memoria, la cultura y la identidad de las comunidades. A través de relatos, entrevistas y experiencias locales, busca destacar la importancia de conservar el patrimonio material e inmaterial, promoviendo la reflexión sobre su papel en la vida contemporánea y fomentando la participación ciudadana en su protección y revitalización para las generaciones presentes y futuras.",fecha:"17/06/2026",lugar:"Nacional - Youtube del Ministerio",hora:"sin confirmar",lat:4.5709,lng:-74.2973,isVirtual:true},
+  {id:"72",area:"Casa Museo Rafael Núñez de la Unidad Administrativa Especial",evento:"Yoga y bienestar colectivo",descripcion:"Sesiones de talleres semanales en el jardín de la CMRN que fortalecen la función social del museo como espacio de bienestar colectivo, autocuidado y encuentro ciudadano, promoviendo prácticas de cuidado como la relajación y la meditación como complementos a lecturas grupales sobre bienestar y salud mental, abiertas al público. Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"09/06/2026",lugar:"Casa Museo Rafael Núñez",hora:"4:00 p.m.",lat:10.391,lng:-75.4794,isVirtual:false},
+  {id:"73",area:"Casa Museo Rafael Núñez de la Unidad Administrativa Especial Museo Nacional",evento:"Club de Ciencias \"Exploradores naturalistas de la Casa Museo Rafael Núñez",descripcion:"Talleres para dar conocer especies locales de fauna y flora para incentivar la protección de estas, al reconocer las funciones e importancia que ellas tienen para la salud de los ecosistemas y el bienestar humano, desarrollando sensibilidad por el cuidado del medio ambiente en una ciudad como Cartagena.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"13/06/2026",lugar:"Casa Museo Rafael Núñez",hora:"3:00 p.m.",lat:10.391,lng:-75.4794,isVirtual:false},
+  {id:"74",area:"Viceministerio de los Patrimonios las Memorias y la Gobernanza Cultural",evento:"Entrega Bohío ancestral Catatumbo",descripcion:"En el marco de la respuesta humanitaria al Catatumbo, el Ministerio articuló acciones con la ART y la Asociación Ñatubaiyibari para construir 13 bohíos ancestrales en los Resguardos Motilón Barí y Catalaura, destinados a la transmisión de saberes y el fortalecimiento territorial del Pueblo Barí. El primero se entregará en Pathuina (Resguardo Motilón Barí), con posible inauguración desde el 5 de junio. Por las condiciones del terreno (acceso de aproximadamente 18 horas combinando tierra y mula desde Cúcuta), Ñatubaiyibari recomienda el desplazamiento en helicóptero. La coordinación logística en sitio, de seguridad y protocolar se adelantará conjuntamente con la ART y la Asociación. Se solicita la gestión del helicóptero",fecha:"18/06/2026",lugar:"Catatumbo, comunidad Pathuina, Resguardo Motilón Barí",hora:"Desplazamiento en la mañana y regreso 2pm aproximadamente",lat:9.0237,lng:-73.0652,isVirtual:false},
+  {id:"75",area:"Casa Museo Rafael Núñez de la Unidad Administrativa Especial Museo Nacional",evento:"Taller literario \"Puentes de palabras\"",descripcion:"Sesiones de mediación de lectura,  que desarrollan el ciclo de talleres itinerantes Puentes de palabras, democratizando el acceso al patrimonio literario e histórico al conectar a la Casa Museo Rafael Núñez con el territorio barrial.Población: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"13/06/2026",lugar:"Casa Museo Rafael Núñez",hora:"4:00 p.m.",lat:10.391,lng:-75.4794,isVirtual:false},
+  {id:"76",area:"Casa Museo Antonio Nariño de la Unidad Administrativa Especial Museo Nacional",evento:"Muestra de proyectos: Quinta feria emprender",descripcion:"La segunda edición de este espacio reúne a la infancia, el emprendimiento, la cultura y la comunidad de Villa de Leyva. Los niños y niñas del Colegio Montessori compartirán sus ideas, proyectos y talentos en una jornada llena de aprendizaje y trabajo colaborativo, fortaleciendo valores como la creatividad la responsabilidad y el compromiso con su territorioPoblación: jóvenes, comerciantes, universidades, instituciones culturales, sector turismo, restaurantes, sector ambiental y cultural, agremiaciones.",fecha:"12/06/2026",lugar:"Casa Museo Antonio Nariño",hora:"9:00 a.m.",lat:5.6341,lng:-73.5256,isVirtual:false},
+  {id:"77",area:"Casa Museo Antonio Nariño de la Unidad Administrativa Especial Museo Nacional",evento:"Taller Darse cuenta de Alexandra García",descripcion:"Taller sobre los momentos en los que la respuesta no está afuera, sino en la capacidad de observar con honestidad lo que ocurre adentro. Cada sesión es una conversación profunda que invita a mirar con mayor claridad, comprender lo que te limita y encontrar nuevas posibilidades para avanzar.Población: instituciones educativas y culturales, agremiaciones, asociaciones, estudiantes, tenderos, vecinas.",fecha:"12/06/2026",lugar:"Casa Museo Antonio Nariño de Villa de Leyva",hora:"9:00 am",lat:5.6341,lng:-73.5256,isVirtual:false},
+  {id:"78",area:"Instituto Caro y Cuervo",evento:"Un país, muchas palabras. Una lengua para la democracia. Epístolas a los conocidos.",descripcion:"Taller de escritura epistolar organizado por el Instituto Caro y Cuervo en el marco de la iniciativa Un país, muchas palabras. Una lengua para la democracia. A partir de la reflexión sobre la escucha, el diálogo y el uso responsable de la lengua, los participantes escribirán cartas dirigidas a personas cercanas, explorando las posibilidades de las palabras para expresar desacuerdos, afectos, memorias y formas de convivencia. Dirigido a lectores, estudiantes y público general.",fecha:"12/06/2026",lugar:"La verbena, calle 121 no. 12-15",hora:"6:00 p.m.-7:00 p.m.",lat:4.7225,lng:-74.0558,isVirtual:false},
+  {id:"79",area:"Instituto Caro y Cuervo",evento:"Una lengua para la democracia. Epístolas a los conocidos.",descripcion:"Conversación pública organizada por el Instituto Caro y Cuervo en librerías del norte de Bogotá, en el marco de la iniciativa Un país, muchas palabras. Una lengua para la democracia. El encuentro invita a reflexionar sobre el papel de la lengua en la convivencia democrática, la escucha y el diálogo respetuoso. Está dirigido a lectores, estudiantes, docentes y público general interesado en la cultura, la lectura y el lenguaje.",fecha:"19/06/2026",lugar:"Librería Casa. Carrera 18a no. 100-62",hora:"6:00 p.m.-7:00 p.m.",lat:4.681,lng:-74.0488,isVirtual:false},
+  {id:"80",area:"Instituto Caro y Cuervo",evento:"Una lengua para la democracia. Taller de retórica y argumentación para la convivencia.",descripcion:"En el contexto actual de polarización y deterioro del debate público, este taller propone un espacio de reflexión y aprendizaje sobre el uso de la lengua como herramienta para la convivencia democrática. A partir de nociones básicas de retórica y argumentación, los participantes explorarán estrategias para expresar desacuerdos con respeto, escuchar puntos de vista distintos y construir intercambios más cuidadosos en la vida cotidiana. Dirigido a estudiantes, docentes, lectores y público general.",fecha:"11/06/2026",lugar:"Tango Discos. Carrera 15 no. 88-63",hora:"6:00 p.m.-7:00 p.m.",lat:4.6698,lng:-74.0519,isVirtual:false},
+  {id:"81",area:"Instituto Caro y Cuervo",evento:"Una lengua para la democracia. Taller de retórica y argumentación para la convivencia",descripcion:"En el contexto actual de polarización y deterioro del debate público, este taller propone un espacio de reflexión y aprendizaje sobre el uso de la lengua como herramienta para la convivencia democrática. A partir de nociones básicas de retórica y argumentación, los participantes explorarán estrategias para expresar desacuerdos con respeto, escuchar puntos de vista distintos y construir intercambios más cuidadosos en la vida cotidiana. Dirigido a estudiantes, docentes, lectores y público general.",fecha:"17/06/2026",lugar:"Casa Fuego",hora:"6:00 p.m.-7:00 p.m.",lat:4.66,lng:-74.053,isVirtual:false},
+  {id:"82",area:"Instituto Caro y Cuervo",evento:"Una lengua para la democracia. Taller de retórica y argumentación para la convivencia",descripcion:"En el contexto actual de polarización y deterioro del debate público, este taller propone un espacio de reflexión y aprendizaje sobre el uso de la lengua como herramienta para la convivencia democrática. A partir de nociones básicas de retórica y argumentación, los participantes explorarán estrategias para expresar desacuerdos con respeto, escuchar puntos de vista distintos y construir intercambios más cuidadosos en la vida cotidiana. Dirigido a estudiantes, docentes, lectores y público general.",fecha:"18/06/2026",lugar:"El cuarto plegable",hora:"6:00 p.m.-7:00 p.m.",lat:4.645,lng:-74.062,isVirtual:false},
+  {id:"83",area:"Instituto Caro y Cuervo",evento:"Una lengua para la democracia. Taller de retórica y argumentación para la convivencia",descripcion:"En el contexto actual de polarización y deterioro del debate público, este taller propone un espacio de reflexión y aprendizaje sobre el uso de la lengua como herramienta para la convivencia democrática. A partir de nociones básicas de retórica y argumentación, los participantes explorarán estrategias para expresar desacuerdos con respeto, escuchar puntos de vista distintos y construir intercambios más cuidadosos en la vida cotidiana. Dirigido a estudiantes, docentes, lectores y público general.",fecha:"19/06/2026",lugar:"Impulsos Aleatorios. Carrera 6 no. 58-40",hora:"6:00 p.m.-7:00 p.m.",lat:4.6353,lng:-74.0644,isVirtual:false},
+  {id:"84",area:"Instituto Caro y Cuervo",evento:"Entrega de la Casa Museo Yerbabuena",descripcion:"Acto público de entrega de la Casa Museo Yerbabuena a la ciudadanía, como espacio dedicado a la preservación y divulgación del patrimonio cultural, histórico y literario del país. La jornada incluirá actividades protocolarias y un recorrido por este lugar emblemático, vinculado a la memoria y a la labor académica y cultural del Instituto Caro y Cuervo.",fecha:"17/06/2026",lugar:"Sede Yerbabuena. Instituto Caro y Cuervo.",hora:"4:00 p.m.-5:00 p.m.",lat:4.8629,lng:-73.926,isVirtual:false},
+  {id:"85",area:"Instituto Caro y Cuervo",evento:"Encuentro Wayuu: En la lengua, el ser y el saber wayuu",descripcion:"Espacio de diálogo y reflexión en torno al wayuunaiki como lengua, patrimonio cultural y vehículo de transmisión de conocimientos, memorias y formas de relación con el territorio. El encuentro contará con la participación de Manuela Vanegas, integrante del Consejo Nacional Asesor de Lenguas Nativas, quien compartirá perspectivas sobre el papel de las lenguas indígenas en la preservación de los saberes propios y en el fortalecimiento de las comunidades que las hablan.La conversación permitirá, además, conocer las iniciativas de documentación lingüística que se desarrollan actualmente en Colombia y la importancia de la participación de los hablantes en estos procesos. En este marco, el Instituto Caro y Cuervo ha acompañado durante los últimos años la documentación de quince lenguas nativas del país, entre ellas el wayuunaiki, contribuyendo a la construcción de registros que favorecen su investigación, preservación y transmisión a las nuevas generaciones.El encuentro busca propiciar una conversación con la comunidad wayuu sobre los desafíos y posibilidades de la documentación lingüística, entendida no solo como una herramienta de preservación, sino también como una forma de reconocer y fortalecer los conocimientos, prácticas y memorias que habitan en la lengua.",fecha:"14/06/2026",lugar:"Riohacha, buscando espacio en el Banco de la República",hora:"2:00 p.m.-3:00 p.m.",lat:11.5444,lng:-72.9072,isVirtual:false},
+  {id:"86",area:"Dirección de Patrimonio y Memoria",evento:"Entrega certificados del Servicio Social para la Paz (Modalidad 9) en Bogota D.C.",descripcion:"Entrega certificados a los 12 promotores de la Modalidad 9 del Servicio Social para la Paz, desarrollado a través de la Escuela Taller de Bogotá, institución que centralizó el proceso de formación, acompañamiento y ejercicio comunitario del patrimonio cultural.",fecha:"26/06/2026",lugar:"Escuela Taller de Bogotá",hora:"8:00 a.m. - 12 m",lat:4.711,lng:-74.0721,isVirtual:false}
+];
+
+// ============================================================
+// ESTADO
+// ============================================================
+let currentDateFilter = 'all';
+let currentCityFilter = 'all';
+let currentAreaFilter = new Set();
+let currentSearch = '';
+let currentView = 'list';
+let markerCluster, map;
+const allEvents = EVENTOS_RAW.map(e => ({...e}));
+
+// ============================================================
+// HELPERS DE FECHA
+// ============================================================
+function parseFecha(s){
+  if(!s)return null;
+  const [d,m,y]=s.split('/');
+  return new Date(+y,+m-1,+d);
+}
+function formatFecha(s){
+  const f=parseFecha(s); if(!f)return s;
+  const D=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${D[f.getDay()]} ${f.getDate()} ${M[f.getMonth()]}`;
+}
+function formatFechaLong(s){
+  const f=parseFecha(s); if(!f)return s;
+  const D=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const M=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${D[f.getDay()]}, ${f.getDate()} de ${M[f.getMonth()]} de ${f.getFullYear()}`;
+}
+function getToday(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+
+// ============================================================
+// FILTROS
+// ============================================================
+function matchesDateFilter(e){
+  const f=parseFecha(e.fecha); if(!f)return true;
+  const today=getToday(), end=new Date(2026,5,30);
+  switch(currentDateFilter){
+    case 'all':   return f>=today&&f<=end;
+    case 'today': return f.getTime()===today.getTime();
+    case 'week':  {const we=new Date(today);we.setDate(today.getDate()+7);return f>=today&&f<=we;}
+    case 'jun5-11':  return f>=new Date(2026,5,5)&&f<=new Date(2026,5,11);
+    case 'jun12-18': return f>=new Date(2026,5,12)&&f<=new Date(2026,5,18);
+    case 'jun19-25': return f>=new Date(2026,5,19)&&f<=new Date(2026,5,25);
+    case 'jun26-30': return f>=new Date(2026,5,26)&&f<=new Date(2026,5,30);
+    default: return true;
+  }
+}
+function matchesCityFilter(e){
+  if(currentCityFilter==='all')return true;
+  return e.lugar.toLowerCase().includes(currentCityFilter);
+}
+function matchesAreaFilter(e){
+  if(currentAreaFilter.size===0)return true;
+  return currentAreaFilter.has(e.area.trim());
+}
+function matchesSearch(e){
+  if(!currentSearch)return true;
+  const q=currentSearch.toLowerCase();
+  return e.evento.toLowerCase().includes(q)||e.area.toLowerCase().includes(q)||
+         e.lugar.toLowerCase().includes(q)||e.descripcion.toLowerCase().includes(q);
+}
+function getFiltered(){
+  return allEvents.filter(e=>matchesDateFilter(e)&&matchesCityFilter(e)&&matchesAreaFilter(e)&&matchesSearch(e));
+}
+
+// ============================================================
+// MAPA
+// ============================================================
+function initMap(){
+  map=L.map('map',{center:[4.5709,-74.2973],zoom:6,zoomControl:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:20
+  }).addTo(map);
+
+  markerCluster=L.markerClusterGroup({
+    maxClusterRadius:60,
+    iconCreateFunction:function(cluster){
+      const n=cluster.getChildCount();
+      const sz=n<5?36:n<15?44:54;
+      return L.divIcon({
+        html:`<div style="background:rgba(26,58,107,0.92);border:2px solid #F5C842;border-radius:50%;width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:${sz>40?16:13}px;color:#F5C842;box-shadow:0 4px 16px rgba(0,0,0,0.5),0 0 0 4px rgba(245,200,66,0.15);">${n}</div>`,
+        className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]
+      });
+    }
+  });
+  map.addLayer(markerCluster);
+}
+
+function pinIcon(isVirtual){
+  const bg=isVirtual?'#4ECDC4':'#F5C842';
+  return L.divIcon({
+    html:`<div style="position:relative;width:28px;height:34px"><div style="width:24px;height:24px;background:${bg};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(255,255,255,0.4);box-shadow:0 3px 10px rgba(0,0,0,0.5);position:absolute;top:0;left:2px"></div><div style="width:9px;height:9px;background:rgba(255,255,255,0.9);border-radius:50%;position:absolute;top:7.5px;left:9.5px;transform:rotate(-45deg)"></div></div>`,
+    className:'',iconSize:[28,34],iconAnchor:[14,34],popupAnchor:[0,-36]
+  });
+}
+
+function popupHTML(e){
+  const loc=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  const org=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+  const desc=e.descripcion.length>200?e.descripcion.substring(0,200)+'…':e.descripcion;
+  return `<div>
+    <div class="popup-header"><span class="popup-date-badge">${formatFecha(e.fecha)}</span><span class="popup-time">${e.hora.substring(0,22)}</span></div>
+    <div class="popup-title">${e.evento}</div>
+    <div class="popup-row">${loc}<span>${e.lugar}</span></div>
+    <div class="popup-row">${org}<span>${e.area}</span></div>
+    <div class="popup-area-tag">${e.area.substring(0,55)}${e.area.length>55?'…':''}</div>
+    ${desc?`<div class="popup-desc">${desc}</div>`:''}
+  </div>`;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function applyFilters(){
+  currentSearch=document.getElementById('search-input').value;
+  const filtered=getFiltered();
+
+  markerCluster.clearLayers();
+  filtered.forEach(ev=>{
+    const mk=L.marker([ev.lat,ev.lng],{icon:pinIcon(ev.isVirtual)});
+    mk.bindPopup(popupHTML(ev),{maxWidth:320,className:''});
+    mk.on('click',()=>highlightCard(ev.id));
+    markerCluster.addLayer(mk);
+  });
+
+  if(currentView==='list')renderList(filtered);
+  else renderCalendar(filtered);
+
+  const n=filtered.length;
+  document.getElementById('events-count').textContent=n;
+  document.getElementById('visible-count').textContent=n;
+  document.getElementById('no-results').style.display=n===0?'block':'none';
+}
+
+function renderList(events){
+  const list=document.getElementById('events-list');
+  list.innerHTML='';
+  const sorted=[...events].sort((a,b)=>(parseFecha(a.fecha)||0)-(parseFecha(b.fecha)||0));
+  sorted.forEach(ev=>{
+    const card=document.createElement('div');
+    card.className='event-card';card.id=`card-${ev.id}`;
+    card.innerHTML=`
+      <div class="event-card-date">
+        <span class="date-badge">${formatFecha(ev.fecha)}</span>
+        <span class="time-badge">${ev.hora.substring(0,20)}</span>
+      </div>
+      <div class="event-card-title">${ev.evento.substring(0,75)}${ev.evento.length>75?'…':''}</div>
+      <div class="event-card-meta">
+        <div class="meta-row">
+          <svg class="meta-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span class="meta-text">${ev.lugar.substring(0,55)}${ev.lugar.length>55?'…':''}</span>
+        </div>
+        <span class="area-tag">${ev.area.substring(0,55)}${ev.area.length>55?'…':''}</span>
+      </div>`;
+    card.addEventListener('click',()=>{
+      map.setView([ev.lat,ev.lng],14,{animate:true});
+      document.querySelectorAll('.event-card').forEach(c=>c.classList.remove('highlighted'));
+      card.classList.add('highlighted');
+    });
+    list.appendChild(card);
+  });
+}
+
+function renderCalendar(events){
+  const cal=document.getElementById('calendar-view');
+  cal.innerHTML='';
+  const sorted=[...events].sort((a,b)=>(parseFecha(a.fecha)||0)-(parseFecha(b.fecha)||0));
+  const byDate={};
+  sorted.forEach(ev=>{if(!byDate[ev.fecha])byDate[ev.fecha]=[];byDate[ev.fecha].push(ev);});
+  Object.entries(byDate).forEach(([fecha,list])=>{
+    const day=document.createElement('div');day.className='calendar-day';
+    day.innerHTML=`<div class="calendar-day-header">📅 ${formatFechaLong(fecha)} <span style="color:var(--text-muted);font-size:10px;font-weight:400">(${list.length})</span></div>`;
+    list.forEach(ev=>{
+      const card=document.createElement('div');card.className='event-card';card.id=`cal-${ev.id}`;
+      card.innerHTML=`
+        <div class="event-card-date"><span class="time-badge">${ev.hora.substring(0,25)}</span></div>
+        <div class="event-card-title">${ev.evento.substring(0,70)}${ev.evento.length>70?'…':''}</div>
+        <div class="event-card-meta">
+          <div class="meta-row">
+            <svg class="meta-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span class="meta-text">${ev.lugar.substring(0,55)}${ev.lugar.length>55?'…':''}</span>
+          </div>
+          <span class="area-tag">${ev.area.substring(0,55)}${ev.area.length>55?'…':''}</span>
+        </div>`;
+      card.addEventListener('click',()=>map.setView([ev.lat,ev.lng],14,{animate:true}));
+      day.appendChild(card);
+    });
+    cal.appendChild(day);
+  });
+}
+
+function highlightCard(id){
+  document.querySelectorAll('.event-card').forEach(c=>c.classList.remove('highlighted'));
+  const card=document.getElementById(`card-${id}`)||document.getElementById(`cal-${id}`);
+  if(card){card.classList.add('highlighted');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+
+// ============================================================
+// POPULATE FILTERS
+// ============================================================
+function populateFilters(){
+  // Ciudades
+  const cities=new Set();
+  allEvents.forEach(e=>{
+    const l=e.lugar.toLowerCase();
+    ['Bogotá','Medellín','Cali','Barranquilla','Cartagena','Bucaramanga','Pasto','Armenia','Popayán',
+     'Valledupar','Santa Marta','Riohacha','Villavicencio','Ocaña','Villa del Rosario','Charalá',
+     'Santa Fe de Antioquia','Villa de Leyva','Girardot','Soacha','Leticia','Quibdó','Facatativá',
+     'Ibagué','Neiva','Tuluá','Funza','Buenaventura','Sincelejo','Cúcuta','Cartago','Catatumbo'].forEach(c=>{
+      if(l.includes(c.toLowerCase()))cities.add(c);
+    });
+  });
+  const sel=document.getElementById('city-filter');
+  Array.from(cities).sort().forEach(c=>{
+    const o=document.createElement('option');o.value=c.toLowerCase();o.textContent=c;sel.appendChild(o);
+  });
+
+  // Áreas
+  const areaCounts={};
+  allEvents.forEach(e=>{const a=e.area.trim();if(!areaCounts[a])areaCounts[a]=0;areaCounts[a]++;});
+  const areaList=document.getElementById('area-options-list');
+  Object.entries(areaCounts).sort((a,b)=>b[1]-a[1]).forEach(([area,count])=>{
+    const opt=document.createElement('div');opt.className='area-option';opt.dataset.area=area;
+    opt.innerHTML=`<div class="area-checkbox"><svg class="area-checkbox-check" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span style="flex:1;line-height:1.3">${area}</span><span class="area-count-badge">${count}</span>`;
+    opt.addEventListener('click',()=>toggleAreaOption(area,opt));
+    areaList.appendChild(opt);
+  });
+}
+
+// ============================================================
+// FILTER SETTERS
+// ============================================================
+function setDateFilter(f){
+  currentDateFilter=f;
+  document.querySelectorAll('#date-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  const map2={all:'btn-all',today:'btn-today',week:'btn-week','jun5-11':'btn-jun5-11','jun12-18':'btn-jun12-18','jun19-25':'btn-jun19-25','jun26-30':'btn-jun26-30'};
+  document.getElementById(map2[f])?.classList.add('active');
+  applyFilters();
+}
+function setCityFilter(v){currentCityFilter=v;applyFilters();}
+function toggleAreaDropdown(e){
+  e.stopPropagation();
+  const panel=document.getElementById('area-dropdown-panel'),btn=document.getElementById('area-dropdown-btn');
+  const open=panel.classList.contains('open');
+  panel.classList.toggle('open',!open);btn.classList.toggle('open',!open);
+}
+function toggleAreaOption(area,optEl){
+  if(currentAreaFilter.has(area)){currentAreaFilter.delete(area);optEl.classList.remove('selected');}
+  else{currentAreaFilter.add(area);optEl.classList.add('selected');}
+  updateAreaBtn();applyFilters();
+}
+function clearAreaFilter(){
+  currentAreaFilter.clear();
+  document.querySelectorAll('.area-option').forEach(o=>o.classList.remove('selected'));
+  updateAreaBtn();applyFilters();
+}
+function updateAreaBtn(){
+  const btn=document.getElementById('area-dropdown-btn'),n=currentAreaFilter.size;
+  if(n===0){btn.textContent='Todas las áreas';btn.classList.remove('has-selection');}
+  else if(n===1){const a=Array.from(currentAreaFilter)[0];btn.textContent=a.length>28?a.substring(0,26)+'…':a;btn.classList.add('has-selection');}
+  else{btn.textContent=`${n} áreas seleccionadas`;btn.classList.add('has-selection');}
+}
+function switchView(v){
+  currentView=v;
+  document.getElementById('events-list').style.display=v==='list'?'block':'none';
+  document.getElementById('calendar-view').style.display=v==='calendar'?'block':'none';
+  document.getElementById('view-list-btn').classList.toggle('active',v==='list');
+  document.getElementById('view-cal-btn').classList.toggle('active',v==='calendar');
+  applyFilters();
+}
+
+// ── MOBILE SIDEBAR TOGGLE ──
+let sidebarOpen=true;
+function toggleMobileSidebar(){
+  const sb=document.getElementById('sidebar'),btn=document.getElementById('sidebar-toggle');
+  if(window.innerWidth<=640){
+    sidebarOpen=!sidebarOpen;
+    sb.style.display=sidebarOpen?'flex':'none';
+    btn.textContent=sidebarOpen?'✕':'☰';
+  }
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  populateFilters();
+  applyFilters();
+  map.fitBounds([[1.0,-79.0],[12.5,-67.0]]);
+
+  // Cerrar dropdown al clic externo
+  document.addEventListener('click',e=>{
+    const w=document.getElementById('area-dropdown-wrapper');
+    if(w&&!w.contains(e.target)){
+      document.getElementById('area-dropdown-panel').classList.remove('open');
+      document.getElementById('area-dropdown-btn').classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>
