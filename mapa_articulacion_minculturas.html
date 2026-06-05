@@ -768,6 +768,38 @@ function toggleMobileSidebar(){
 }
 
 // ============================================================
+// ACCESIBILIDAD Y TEMA
+// ============================================================
+let fontScale = 0; // 0 = normal, 1 = lg, 2 = xl
+function changeFontSize(dir) {
+  fontScale += dir;
+  if(fontScale < 0) fontScale = 0;
+  if(fontScale > 2) fontScale = 2;
+  
+  document.body.classList.remove('font-lg', 'font-xl');
+  if(fontScale === 1) document.body.classList.add('font-lg');
+  if(fontScale === 2) document.body.classList.add('font-xl');
+}
+
+let isLightMode = false;
+function toggleTheme() {
+  isLightMode = !isLightMode;
+  if (isLightMode) {
+    document.body.setAttribute('data-theme', 'light');
+    if (map && darkLayer && lightLayer) {
+      map.removeLayer(darkLayer);
+      map.addLayer(lightLayer);
+    }
+  } else {
+    document.body.removeAttribute('data-theme');
+    if (map && darkLayer && lightLayer) {
+      map.removeLayer(lightLayer);
+      map.addLayer(darkLayer);
+    }
+  }
+}
+
+// ============================================================
 // BOOT
 // ============================================================
 document.addEventListener('DOMContentLoaded',()=>{
