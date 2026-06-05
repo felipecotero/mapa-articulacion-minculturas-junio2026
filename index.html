@@ -160,7 +160,11 @@
     .popup-row{display:flex;align-items:flex-start;gap:5px;margin-bottom:4px;font-size:11px;color:var(--text-muted);}
     .popup-row svg{flex-shrink:0;margin-top:1px;}
     .popup-area-tag{display:inline-block;background:rgba(75,60,140,0.25);border:1px solid rgba(75,60,140,0.5);color:#C8B8FF;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:500;margin-top:6px;}
-    .popup-desc{font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);max-height:70px;overflow-y:auto;}
+    .popup-desc{font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);}
+    .card-desc-wrap{margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+    .card-desc{font-size:10px;color:var(--text-muted);line-height:1.5;}
+    .leer-mas-btn{display:inline;background:none;border:none;padding:0;margin-left:2px;color:var(--mc-gold);font-size:10px;font-family:'Nunito Sans',sans-serif;font-weight:700;cursor:pointer;text-decoration:underline;white-space:nowrap;}
+    .leer-mas-btn:hover{color:var(--mc-gold-light);}
 
     /* ── MAP LEGEND ── */
     .map-legend{position:absolute;bottom:30px;left:16px;z-index:999;background:rgba(33,24,72,0.95);border:1px solid rgba(245,180,0,0.2);border-radius:10px;padding:10px 14px;font-size:10px;color:var(--text-muted);box-shadow:var(--shadow);}
@@ -501,14 +505,20 @@ function pinIcon(isVirtual){
 function popupHTML(e){
   const loc=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
   const org=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
-  const desc=e.descripcion.length>200?e.descripcion.substring(0,200)+'…':e.descripcion;
+  const uid=`pp-${e.id}`;
+  const LIMIT=220;
+  const short=e.descripcion.length>LIMIT;
+  const preview=short?e.descripcion.substring(0,LIMIT):e.descripcion;
+  const descHTML=short
+    ?`<div class="popup-desc"><span id="${uid}-short">${preview}…</span><span id="${uid}-full" style="display:none">${e.descripcion}</span> <button class="leer-mas-btn" onclick="toggleDesc('${uid}')">Leer más</button></div>`
+    :(e.descripcion?`<div class="popup-desc">${e.descripcion}</div>`:'');
   return `<div>
     <div class="popup-header"><span class="popup-date-badge">${formatFecha(e.fecha)}</span><span class="popup-time">${e.hora.substring(0,22)}</span></div>
     <div class="popup-title">${e.evento}</div>
     <div class="popup-row">${loc}<span>${e.lugar}</span></div>
     <div class="popup-row">${org}<span>${e.area}</span></div>
     <div class="popup-area-tag">${e.area.substring(0,55)}${e.area.length>55?'…':''}</div>
-    ${desc?`<div class="popup-desc">${desc}</div>`:''}
+    ${descHTML}
   </div>`;
 }
 
@@ -543,19 +553,28 @@ function renderList(events){
   sorted.forEach(ev=>{
     const card=document.createElement('div');
     card.className='event-card';card.id=`card-${ev.id}`;
+    const uid=`lc-${ev.id}`;
+    const LIMIT=180;
+    const short=ev.descripcion&&ev.descripcion.length>LIMIT;
+    const descBlock=ev.descripcion
+      ?short
+        ?`<div class="card-desc-wrap"><span id="${uid}-short" class="card-desc">${ev.descripcion.substring(0,LIMIT)}…</span><span id="${uid}-full" class="card-desc" style="display:none">${ev.descripcion}</span> <button class="leer-mas-btn" onclick="event.stopPropagation();toggleDesc('${uid}')">Leer más</button></div>`
+        :`<div class="card-desc-wrap"><span class="card-desc">${ev.descripcion}</span></div>`
+      :'';
     card.innerHTML=`
       <div class="event-card-date">
         <span class="date-badge">${formatFecha(ev.fecha)}</span>
         <span class="time-badge">${ev.hora.substring(0,20)}</span>
       </div>
-      <div class="event-card-title">${ev.evento.substring(0,75)}${ev.evento.length>75?'…':''}</div>
+      <div class="event-card-title">${ev.evento}</div>
       <div class="event-card-meta">
         <div class="meta-row">
           <svg class="meta-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span class="meta-text">${ev.lugar.substring(0,55)}${ev.lugar.length>55?'…':''}</span>
+          <span class="meta-text">${ev.lugar}</span>
         </div>
-        <span class="area-tag">${ev.area.substring(0,55)}${ev.area.length>55?'…':''}</span>
-      </div>`;
+        <span class="area-tag">${ev.area}</span>
+      </div>
+      ${descBlock}`;
     card.addEventListener('click',()=>{
       map.setView([ev.lat,ev.lng],14,{animate:true});
       document.querySelectorAll('.event-card').forEach(c=>c.classList.remove('highlighted'));
@@ -576,21 +595,44 @@ function renderCalendar(events){
     day.innerHTML=`<div class="calendar-day-header">📅 ${formatFechaLong(fecha)} <span style="color:var(--text-muted);font-size:10px;font-weight:400">(${list.length})</span></div>`;
     list.forEach(ev=>{
       const card=document.createElement('div');card.className='event-card';card.id=`cal-${ev.id}`;
+      const uid2=`cc-${ev.id}`;
+      const LIMIT2=180;
+      const short2=ev.descripcion&&ev.descripcion.length>LIMIT2;
+      const descBlock2=ev.descripcion
+        ?short2
+          ?`<div class="card-desc-wrap"><span id="${uid2}-short" class="card-desc">${ev.descripcion.substring(0,LIMIT2)}…</span><span id="${uid2}-full" class="card-desc" style="display:none">${ev.descripcion}</span> <button class="leer-mas-btn" onclick="event.stopPropagation();toggleDesc('${uid2}')">Leer más</button></div>`
+          :`<div class="card-desc-wrap"><span class="card-desc">${ev.descripcion}</span></div>`
+        :'';
       card.innerHTML=`
         <div class="event-card-date"><span class="time-badge">${ev.hora.substring(0,25)}</span></div>
-        <div class="event-card-title">${ev.evento.substring(0,70)}${ev.evento.length>70?'…':''}</div>
+        <div class="event-card-title">${ev.evento}</div>
         <div class="event-card-meta">
           <div class="meta-row">
             <svg class="meta-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span class="meta-text">${ev.lugar.substring(0,55)}${ev.lugar.length>55?'…':''}</span>
+            <span class="meta-text">${ev.lugar}</span>
           </div>
-          <span class="area-tag">${ev.area.substring(0,55)}${ev.area.length>55?'…':''}</span>
-        </div>`;
+          <span class="area-tag">${ev.area}</span>
+        </div>
+        ${descBlock2}`;
       card.addEventListener('click',()=>map.setView([ev.lat,ev.lng],14,{animate:true}));
       day.appendChild(card);
     });
     cal.appendChild(day);
   });
+}
+
+function toggleDesc(uid){
+  const s=document.getElementById(uid+'-short');
+  const f=document.getElementById(uid+'-full');
+  if(!s||!f)return;
+  const btn=s.nextElementSibling&&s.nextElementSibling.nextElementSibling
+         ||f.nextElementSibling;
+  const expanding=s.style.display!=='none';
+  s.style.display=expanding?'none':'';
+  f.style.display=expanding?'':'none';
+  // find the button: it's always the last button in the parent
+  const wrap=s.closest('.card-desc-wrap,.popup-desc');
+  if(wrap){const b=wrap.querySelector('.leer-mas-btn');if(b)b.textContent=expanding?'Leer menos':'Leer más';}
 }
 
 function highlightCard(id){
