@@ -115,22 +115,33 @@
     .area-dropdown-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 26px 4px 12px;font-size:11px;color:var(--text);cursor:pointer;font-family:'Nunito Sans',sans-serif;white-space:nowrap;transition:all 0.2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238B96B0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;max-width:200px;overflow:hidden;text-overflow:ellipsis;text-align:left;}
     .area-dropdown-btn:hover,.area-dropdown-btn.open{border-color:var(--mc-gold);background-color:rgba(245,180,0,0.08);}
     .area-dropdown-btn.has-selection{border-color:rgba(245,180,0,0.6);color:var(--mc-gold);}
-    .area-dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:280px;max-width:360px;background:#1E1640;border:1px solid rgba(255,255,255,0.12);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.7);z-index:3000;overflow:hidden;}
+    .area-dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:320px;max-width:420px;background:#1E1640;border:1px solid rgba(255,255,255,0.12);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.7);z-index:3000;overflow:hidden;}
     .area-dropdown-panel.open{display:block;}
     .area-panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);}
     .area-panel-header span{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;}
-    .area-clear-btn{font-size:11px;color:var(--mc-gold);cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;padding:0;}
+    .area-clear-btn{font-size:11px;color:var(--mc-gold);cursor:pointer;background:none;border:none;font-family:'Nunito Sans',sans-serif;padding:0;}
     .area-clear-btn:hover{text-decoration:underline;}
-    .area-options-list{max-height:240px;overflow-y:auto;padding:6px;}
+    .area-options-list{max-height:320px;overflow-y:auto;padding:6px;}
     .area-options-list::-webkit-scrollbar{width:4px;}
     .area-options-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
-    .area-option{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;font-size:11px;color:var(--text-muted);}
+    /* group header row */
+    .area-group-header{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;user-select:none;}
+    .area-group-header:hover{background:rgba(255,255,255,0.05);}
+    .area-group-label{flex:1;font-size:11px;font-weight:700;color:var(--text);line-height:1.3;}
+    .area-group-count{background:rgba(255,255,255,0.06);border-radius:8px;padding:1px 5px;font-size:10px;color:var(--text-muted);}
+    .area-group-chevron{font-size:9px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;}
+    .area-group-chevron.open{transform:rotate(90deg);}
+    /* individual child rows */
+    .area-group-children{display:none;padding-left:10px;}
+    .area-group-children.open{display:block;}
+    .area-option{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;font-size:11px;color:var(--text-muted);}
     .area-option:hover{background:rgba(255,255,255,0.05);color:var(--text);}
     .area-option.selected{color:var(--text);}
     .area-checkbox{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
-    .area-option.selected .area-checkbox{background:var(--mc-gold);border-color:var(--mc-gold);}
+    .area-option.selected .area-checkbox,.area-group-header.selected .area-checkbox{background:var(--mc-gold);border-color:var(--mc-gold);}
+    .area-group-header.partial .area-checkbox{background:rgba(245,180,0,0.3);border-color:var(--mc-gold);}
     .area-checkbox-check{display:none;color:#0A0F1E;}
-    .area-option.selected .area-checkbox-check{display:block;}
+    .area-option.selected .area-checkbox-check,.area-group-header.selected .area-checkbox-check{display:block;}
     .area-count-badge{margin-left:auto;background:rgba(255,255,255,0.06);border-radius:8px;padding:1px 5px;font-size:10px;color:var(--text-muted);}
 
     /* ── MAIN LAYOUT ── */
@@ -741,17 +752,10 @@ function populateFilters(){
   Array.from(cities).sort().forEach(c=>{
     const o=document.createElement('option');o.value=c.toLowerCase();o.textContent=c;sel.appendChild(o);
   });
-
-  // Áreas
+  // Áreas agrupadas
   const areaCounts={};
   allEvents.forEach(e=>{const a=e.area.trim();if(!areaCounts[a])areaCounts[a]=0;areaCounts[a]++;});
-  const areaList=document.getElementById('area-options-list');
-  Object.entries(areaCounts).sort((a,b)=>b[1]-a[1]).forEach(([area,count])=>{
-    const opt=document.createElement('div');opt.className='area-option';opt.dataset.area=area;
-    opt.innerHTML=`<div class="area-checkbox"><svg class="area-checkbox-check" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span style="flex:1;line-height:1.3">${area}</span><span class="area-count-badge">${count}</span>`;
-    opt.addEventListener('click',()=>toggleAreaOption(area,opt));
-    areaList.appendChild(opt);
-  });
+  buildGroupedAreaList(areaCounts);
 }
 
 // ============================================================
@@ -771,20 +775,205 @@ function toggleAreaDropdown(e){
   const open=panel.classList.contains('open');
   panel.classList.toggle('open',!open);btn.classList.toggle('open',!open);
 }
-function toggleAreaOption(area,optEl){
-  if(currentAreaFilter.has(area)){currentAreaFilter.delete(area);optEl.classList.remove('selected');}
-  else{currentAreaFilter.add(area);optEl.classList.add('selected');}
-  updateAreaBtn();applyFilters();
-}
 function clearAreaFilter(){
   currentAreaFilter.clear();
   document.querySelectorAll('.area-option').forEach(o=>o.classList.remove('selected'));
-  updateAreaBtn();applyFilters();
+  document.querySelectorAll('.area-group-header').forEach(h=>h.classList.remove('selected','partial'));
+  updateAreaBtn();
+  applyFilters();
 }
+
+// ============================================================
+// GROUPED AREA FILTER
+// ============================================================
+
+// Define parent groups and which area strings belong to each.
+// Any area not listed falls into a catch-all "Otras áreas" group.
+const AREA_GROUPS = [
+  {
+    label: 'Despacho de la Ministra',
+    match: a => a.toLowerCase().startsWith('despacho'),
+  },
+  {
+    label: 'Dirección de Fomento Regional (DFR)',
+    match: a => a.toLowerCase().startsWith('dirección de fomento regional'),
+  },
+  {
+    label: 'Dirección de Artes',
+    match: a => a.toLowerCase().startsWith('dirección de artes'),
+  },
+  {
+    label: 'Dirección de Patrimonio y Memoria',
+    match: a => a.toLowerCase().startsWith('dirección de patrimonio') || a.toLowerCase().startsWith('grupo de patrimonio'),
+  },
+  {
+    label: 'Museos de la Nación',
+    match: a => /museo/i.test(a),
+  },
+  {
+    label: 'Biblioteca Nacional / DACMI / Comunicación',
+    match: a => /biblioteca|dacmi/i.test(a),
+  },
+  {
+    label: 'ICANH / Instituto Caro y Cuervo',
+    match: a => /icanh|caro y cuervo/i.test(a),
+  },
+  {
+    label: 'Viceministerios y otras dependencias',
+    match: a => /viceministerio|archivo general|cooperación|equipa de paz|gcai/i.test(a),
+  },
+];
+
+function getGroup(area) {
+  for (const g of AREA_GROUPS) {
+    if (g.match(area)) return g.label;
+  }
+  return 'Otras áreas';
+}
+
+const CHECKBOX_SVG = `<div class="area-checkbox"><svg class="area-checkbox-check" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+
+function buildGroupedAreaList(areaCounts) {
+  // bucket areas into groups
+  const buckets = {};
+  AREA_GROUPS.forEach(g => buckets[g.label] = []);
+  buckets['Otras áreas'] = [];
+  
+  Object.keys(areaCounts).forEach(area => {
+    const g = getGroup(area);
+    if (!buckets[g]) buckets[g] = [];
+    buckets[g].push(area);
+  });
+
+  const areaList = document.getElementById('area-options-list');
+  areaList.innerHTML = '';
+
+  Object.entries(buckets).forEach(([groupLabel, areas]) => {
+    if (!areas.length) return;
+    const totalCount = areas.reduce((s,a) => s + (areaCounts[a]||0), 0);
+
+    // ── Group container ──
+    const groupEl = document.createElement('div');
+    groupEl.className = 'area-group';
+
+    // ── Group header ──
+    const header = document.createElement('div');
+    header.className = 'area-group-header';
+    header.dataset.group = groupLabel;
+    header.innerHTML = `${CHECKBOX_SVG}<span class="area-group-label">${groupLabel}</span><span class="area-group-count">${totalCount}</span><span class="area-group-chevron">▶</span>`;
+
+    // ── Children container ──
+    const children = document.createElement('div');
+    children.className = 'area-group-children';
+
+    // Single area in group with same name as group → just show the group row, no children
+    const isSingleSameName = areas.length === 1 && areas[0].trim() === groupLabel.trim();
+
+    if (!isSingleSameName) {
+      // chevron click: expand/collapse children
+      header.querySelector('.area-group-chevron').addEventListener('click', e => {
+        e.stopPropagation();
+        children.classList.toggle('open');
+        header.querySelector('.area-group-chevron').classList.toggle('open');
+      });
+    } else {
+      // hide chevron for leaf nodes
+      header.querySelector('.area-group-chevron').style.display = 'none';
+    }
+
+    // checkbox / group row click → select/deselect all children
+    header.querySelector('.area-checkbox').addEventListener('click', e => {
+      e.stopPropagation();
+      toggleGroupSelection(groupLabel, areas, header);
+    });
+    header.addEventListener('click', e => {
+      // clicking the label also toggles expand
+      if (!e.target.classList.contains('area-checkbox') && !e.target.closest('.area-checkbox')) {
+        if (!isSingleSameName) {
+          children.classList.toggle('open');
+          header.querySelector('.area-group-chevron').classList.toggle('open');
+        } else {
+          toggleGroupSelection(groupLabel, areas, header);
+        }
+      }
+    });
+
+    groupEl.appendChild(header);
+
+    // Build child option rows (only if multiple / different name)
+    if (!isSingleSameName) {
+      areas.sort().forEach(area => {
+        const opt = document.createElement('div');
+        opt.className = 'area-option';
+        opt.dataset.area = area;
+        // show sub-label (strip group prefix for cleanliness in DFR)
+        let subLabel = area;
+        if (area.startsWith('Dirección de Fomento Regional –')) {
+          subLabel = area.replace('Dirección de Fomento Regional –', '').trim();
+        } else if (area.startsWith('Despacho de la Ministra -') || area.startsWith('Despacho Ministra -')) {
+          subLabel = area.replace(/^Despacho (de la )?Ministra\s*-?\s*/i,'').trim();
+        } else if (area.startsWith('Dirección de Artes -')) {
+          subLabel = area.replace('Dirección de Artes -','').trim();
+        } else if (area.startsWith('Dirección de Patrimonio y Memoria -')) {
+          subLabel = area.replace('Dirección de Patrimonio y Memoria -','').trim();
+        }
+        const cnt = areaCounts[area]||0;
+        opt.innerHTML = `${CHECKBOX_SVG}<span style="flex:1;line-height:1.3">${subLabel}</span><span class="area-count-badge">${cnt}</span>`;
+        opt.addEventListener('click', () => toggleAreaOption(area, opt, groupLabel, header));
+        children.appendChild(opt);
+      });
+      groupEl.appendChild(children);
+    }
+
+    areaList.appendChild(groupEl);
+  });
+}
+
+function toggleGroupSelection(groupLabel, areas, headerEl) {
+  const allSelected = areas.every(a => currentAreaFilter.has(a));
+  if (allSelected) {
+    // deselect all
+    areas.forEach(a => currentAreaFilter.delete(a));
+    headerEl.parentElement.querySelectorAll('.area-option').forEach(o => o.classList.remove('selected'));
+    headerEl.classList.remove('selected','partial');
+  } else {
+    // select all
+    areas.forEach(a => currentAreaFilter.add(a));
+    headerEl.parentElement.querySelectorAll('.area-option').forEach(o => o.classList.add('selected'));
+    headerEl.classList.add('selected');
+    headerEl.classList.remove('partial');
+  }
+  updateAreaBtn();
+  applyFilters();
+}
+
+function toggleAreaOption(area, optEl, groupLabel, headerEl) {
+  if (currentAreaFilter.has(area)) {
+    currentAreaFilter.delete(area);
+    optEl.classList.remove('selected');
+  } else {
+    currentAreaFilter.add(area);
+    optEl.classList.add('selected');
+  }
+  // update group header state
+  updateGroupHeader(headerEl, groupLabel);
+  updateAreaBtn();
+  applyFilters();
+}
+
+function updateGroupHeader(headerEl, groupLabel) {
+  const childOpts = headerEl.parentElement.querySelectorAll('.area-option');
+  const total = childOpts.length;
+  const sel = Array.from(childOpts).filter(o => o.classList.contains('selected')).length;
+  headerEl.classList.remove('selected','partial');
+  if (sel === total && total > 0) headerEl.classList.add('selected');
+  else if (sel > 0) headerEl.classList.add('partial');
+}
+
 function updateAreaBtn(){
   const btn=document.getElementById('area-dropdown-btn'),n=currentAreaFilter.size;
   if(n===0){btn.textContent='Todas las áreas';btn.classList.remove('has-selection');}
-  else if(n===1){const a=Array.from(currentAreaFilter)[0];btn.textContent=a.length>28?a.substring(0,26)+'…':a;btn.classList.add('has-selection');}
+  else if(n===1){const a=Array.from(currentAreaFilter)[0];const short=a.length>28?a.substring(0,26)+'…':a;btn.textContent=short;btn.classList.add('has-selection');}
   else{btn.textContent=`${n} áreas seleccionadas`;btn.classList.add('has-selection');}
 }
 function switchView(v){
