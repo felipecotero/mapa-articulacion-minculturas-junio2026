@@ -294,7 +294,7 @@
 <div id="filter-bar">
   <span class="filter-label">📅 Fecha</span>
   <div class="filter-group" id="date-filters">
-    <button class="filter-btn active" onclick="setDateFilter('all')" id="btn-all">Todas</button>
+    <button class="filter-btn active" onclick="setDateFilter('all')" id="btn-all">Todo junio</button>
     <button class="filter-btn" onclick="setDateFilter('today')" id="btn-today">Hoy</button>
     <button class="filter-btn" onclick="setDateFilter('week')" id="btn-week">7 días</button>
     <button class="filter-btn" onclick="setDateFilter('jun5-11')" id="btn-jun5-11">5–11 Jun</button>
@@ -578,7 +578,7 @@ function matchesDateFilter(e){
   const f=parseFecha(e.fecha); if(!f)return true;
   const today=getToday(), end=new Date(2026,5,30);
   switch(currentDateFilter){
-    case 'all':   return f>=today&&f<=end;
+    case 'all':   return f>=new Date(2026,5,1)&&f<=end;
     case 'today': return f.getTime()===today.getTime();
     case 'week':  {const we=new Date(today);we.setDate(today.getDate()+7);return f>=today&&f<=we;}
     case 'jun5-11':  return f>=new Date(2026,5,5)&&f<=new Date(2026,5,11);
