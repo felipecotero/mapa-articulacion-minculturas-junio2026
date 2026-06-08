@@ -2,9 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Articulación Minculturas · Cierre de Gobierno 2026</title>
-  <meta name="description" content="Mapa interactivo de las 86 acciones del Ministerio de las Culturas, las Artes y los Saberes para el cierre de gobierno – Junio 2026"/>
+  <meta name="description" content="Mapa interactivo de las 149 acciones del Ministerio de las Culturas, las Artes y los Saberes para el cierre de gobierno – Junio 2026"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -206,14 +209,26 @@
     .leer-mas-btn:hover{color:var(--mc-gold-light);}
 
     /* ── MAP LEGEND ── */
-    .map-legend{position:absolute;bottom:30px;left:16px;z-index:999;background:rgba(33,24,72,0.95);border:1px solid rgba(245,180,0,0.2);border-radius:10px;padding:10px 14px;font-size:10px;color:var(--text-muted);box-shadow:var(--shadow);}
-    .map-legend h4{font-size:10px;font-weight:600;color:var(--text);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px;}
+    .map-legend{position:absolute;bottom:30px;left:16px;z-index:999;background:rgba(33,24,72,0.95);border:1px solid rgba(245,180,0,0.2);border-radius:10px;padding:0;font-size:10px;color:var(--text-muted);box-shadow:var(--shadow);overflow:hidden;min-width:190px;}
+    .legend-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;cursor:pointer;user-select:none;gap:8px;}
+    .legend-header:hover{background:rgba(255,255,255,0.04);}
+    .legend-header h4{font-size:10px;font-weight:700;color:var(--text);margin:0;text-transform:uppercase;letter-spacing:0.5px;}
+    .legend-toggle-btn{font-size:9px;color:var(--mc-gold);transition:transform 0.25s;display:inline-block;}
+    .legend-toggle-btn.collapsed{transform:rotate(180deg);}
+    .legend-body{padding:0 12px 9px;transition:all 0.25s;}
+    .legend-body.collapsed{display:none;}
     .legend-item{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
     .legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
 
     /* ── MOBILE TOGGLE ── */
     #sidebar-toggle{display:none;position:fixed;bottom:20px;right:20px;z-index:2000;background:var(--mc-gold);color:#1A1330;border:none;border-radius:50%;width:48px;height:48px;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:all 0.2s;}
     #sidebar-toggle:hover{transform:scale(1.1);}
+
+    /* ── MOBILE SIDEBAR COLLAPSED HANDLE ── */
+    .sidebar-drag-handle{display:none;height:28px;background:var(--bg-card);border-bottom:1px solid var(--border);align-items:center;justify-content:center;cursor:pointer;gap:8px;font-size:10px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;flex-shrink:0;}
+    .sidebar-drag-handle:hover{background:rgba(245,180,0,0.07);color:var(--mc-gold);}
+    .drag-pip{width:32px;height:4px;background:var(--text-muted);border-radius:4px;opacity:0.4;}
+    #sidebar.collapsed-mobile .sidebar-drag-handle .drag-pip{background:var(--mc-gold);opacity:0.7;}
 
     /* ── RESPONSIVE ── */
     @media (max-width:900px){
@@ -228,18 +243,38 @@
       .logo-minca{height:30px;}
       .header-title h1{font-size:12px;}
       .header-right{display:none;}
-      #filter-bar{padding:6px 10px;gap:5px;}
+      #filter-bar{padding:5px 10px;gap:4px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;}
+      #filter-bar::-webkit-scrollbar{display:none;}
       #filter-bar .filter-label{display:none;}
       #filter-bar .filter-divider{display:none;}
-      #search-input{width:100px;}
-      .filter-btn{padding:3px 9px;font-size:10px;}
+      #search-input{width:90px;flex-shrink:0;}
+      .filter-btn{padding:3px 9px;font-size:10px;flex-shrink:0;}
+      .area-dropdown-btn{flex-shrink:0;}
 
-      .main-layout{flex-direction:column;height:calc(100vh - var(--header-h) - var(--filter-bar-h, 90px));}
-      #map{flex:none;height:55vh;}
-      #sidebar{width:100%;height:45vh;border-left:none;border-top:1px solid var(--border);transform:none!important;}
-      .map-legend{bottom:46vh;left:10px;padding:7px 10px;}
-      #sidebar-toggle{display:flex;align-items:center;justify-content:center;}
+      .main-layout{flex-direction:column;height:calc(100vh - var(--header-h) - 44px);}
+      #map{flex:1;min-height:0;}
+      #sidebar{
+        width:100%;height:44vh;
+        border-left:none;border-top:1px solid var(--border);
+        transform:none!important;
+        flex-direction:column;
+        transition:height 0.3s ease;
+      }
+      #sidebar.collapsed-mobile{
+        height:28px;
+      }
+      #sidebar.collapsed-mobile #events-list,
+      #sidebar.collapsed-mobile #calendar-view,
+      #sidebar.collapsed-mobile .sidebar-header,
+      #sidebar.collapsed-mobile #no-results{display:none!important;}
+      .sidebar-drag-handle{display:flex;}
+      .map-legend{bottom:calc(44vh + 10px);left:10px;padding:0;}
+      #sidebar.collapsed-mobile ~ * .map-legend,
+      body:has(#sidebar.collapsed-mobile) .map-legend{bottom:42px;}
+      .map-legend .legend-body{padding:0 10px 8px;}
+      #sidebar-toggle{display:none!important;} /* replaced by drag handle */
       .leaflet-popup-content-wrapper{min-width:220px;max-width:280px;}
+      .area-dropdown-panel{min-width:280px;max-width:calc(100vw - 20px);left:auto;right:0;}
     }
   </style>
 </head>
@@ -254,7 +289,7 @@
     </div>
   </div>
   <div class="header-right">
-    <div class="stat-chip"><span id="visible-count">104</span> eventos visibles</div>
+    <div class="stat-chip"><span id="visible-count">109</span> eventos visibles</div>
     <div class="stat-chip">🗓 Hasta el 30 Jun 2026</div>
   </div>
 </header>
@@ -262,7 +297,7 @@
 <div id="filter-bar">
   <span class="filter-label">📅 Fecha</span>
   <div class="filter-group" id="date-filters">
-    <button class="filter-btn active" onclick="setDateFilter('all')" id="btn-all">Todas</button>
+    <button class="filter-btn active" onclick="setDateFilter('all')" id="btn-all">Todo junio</button>
     <button class="filter-btn" onclick="setDateFilter('today')" id="btn-today">Hoy</button>
     <button class="filter-btn" onclick="setDateFilter('week')" id="btn-week">7 días</button>
     <button class="filter-btn" onclick="setDateFilter('jun5-11')" id="btn-jun5-11">5–11 Jun</button>
@@ -299,10 +334,15 @@
 <div class="main-layout">
   <div id="map"></div>
   <div id="sidebar">
+    <div class="sidebar-drag-handle" onclick="toggleMobileSidebar()" title="Expandir / colapsar lista">
+      <div class="drag-pip"></div>
+      <span id="sidebar-drag-label">▲ Lista de eventos</span>
+      <div class="drag-pip"></div>
+    </div>
     <div class="sidebar-header">
       <div class="sidebar-header-left">
         <h3>📋 Eventos</h3>
-        <span id="events-count" style="background:var(--mc-purple);color:#FFF;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">86</span>
+        <span id="events-count" style="background:var(--mc-purple);color:#FFF;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">109</span>
       </div>
       <div class="sidebar-controls">
         <button class="ctrl-btn" onclick="changeFontSize(-1)" title="Achicar letra">A-</button>
@@ -320,10 +360,15 @@
 </div>
 
 <div class="map-legend" id="map-legend">
-  <h4>Referencias</h4>
-  <div class="legend-item"><div class="legend-dot" style="background:#F5B400"></div><span>Evento único</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#4B3C8C;border:2px solid #F5B400"></div><span>Varios eventos (clic → zoom)</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#9B6FD6;opacity:0.7"></div><span>Virtual / Nacional</span></div>
+  <div class="legend-header" onclick="toggleLegend()">
+    <h4>Referencias</h4>
+    <span class="legend-toggle-btn" id="legend-toggle-icon">▲</span>
+  </div>
+  <div class="legend-body" id="legend-body">
+    <div class="legend-item"><div class="legend-dot" style="background:#F5B400"></div><span>Evento único</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4B3C8C;border:2px solid #F5B400"></div><span>Varios eventos (clic → zoom)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#9B6FD6;opacity:0.7"></div><span>Virtual / Nacional</span></div>
+  </div>
 </div>
 
 <button id="sidebar-toggle" onclick="toggleMobileSidebar()" title="Ver lista">☰</button>
@@ -486,7 +531,14 @@ const EVENTOS_RAW = [
   {id:"141",area:"Dirección de Fomento Regional – Regional Boyacá",evento:"Encuentro Cultural de Saberes y Expresiones Comunitarias",descripcion:"Muestra cultural con participación abierta de artistas y ciudadanía.",fecha:"16/06/2026",lugar:"Plaza principal de Sogamoso",hora:"16:00 - 20:00",lat:5.7144,lng:-72.9356,isVirtual:false},
   {id:"142",area:"Dirección de Fomento Regional – Regional Huila",evento:"Diálogo Territorial de Artes Vivas y Participación Cultural",descripcion:"Procesos organizativos y colectivos artísticos.",fecha:"16/06/2026",lugar:"Neiva",hora:"16:00 - 20:00",lat:2.9273,lng:-75.2819,isVirtual:false},
   {id:"143",area:"Dirección de Fomento Regional – Regional Santander",evento:"Diálogo Audiovisual y Memoria Comunitaria",descripcion:"Cine foro con procesos colectivos y cine colombiano.",fecha:"17/06/2026",lugar:"San Gil",hora:"17:00 - 20:00",lat:6.5566,lng:-73.1333,isVirtual:false},
-  {id:"144",area:"Dirección de Fomento Regional – Regional Chocó",evento:"Jornada de Articulación de las Redes de Gobernanza Cultural para la Paz del Darién",descripcion:"Articulación de organizaciones sociales y culturales.",fecha:"18/06/2026",lugar:"Unguía, Chocó",hora:"9:00 - 15:00",lat:8.0303,lng:-77.0885,isVirtual:false}
+  {id:"144",area:"Dirección de Fomento Regional – Regional Chocó",evento:"Jornada de Articulación de las Redes de Gobernanza Cultural para la Paz del Darién",descripcion:"Articulación de organizaciones sociales y culturales.",fecha:"18/06/2026",lugar:"Unguía, Chocó",hora:"9:00 - 15:00",lat:8.0303,lng:-77.0885,isVirtual:false},
+
+  // ── FERIAS DE ECONOMÍAS CULTURALES — CIRCUITOS VIVOS (CSV 92-96) ──
+  {id:"145",area:"Dirección de Estrategia, Desarrollo y Emprendimiento",evento:"Feria de Economías Culturales — Circuitos Vivos · Cúcuta",descripcion:"Desarrollar una estrategia de fortalecimiento de 25 unidades productivas a través de mentorías especializadas, participación en feria de economía cultural y entrega de dotaciones - Bajo la marca Circuitos Vivos.",fecha:"06/06/2026",lugar:"Cúcuta",hora:"10:00 am - 05:00 pm",lat:7.8939,lng:-72.5078,isVirtual:false},
+  {id:"146",area:"Dirección de Estrategia, Desarrollo y Emprendimiento",evento:"Feria de Economías Culturales — Circuitos Vivos · Neiva",descripcion:"Desarrollar una estrategia de fortalecimiento de 25 unidades productivas a través de mentorías especializadas, participación en feria de economía cultural y entrega de dotaciones - Bajo la marca Circuitos Vivos.",fecha:"13/06/2026",lugar:"Neiva",hora:"08:00 AM - 06:00 PM",lat:2.9273,lng:-75.2819,isVirtual:false},
+  {id:"147",area:"Dirección de Estrategia, Desarrollo y Emprendimiento",evento:"Feria de Economías Culturales — Circuitos Vivos · Ibagué",descripcion:"Desarrollar una estrategia de fortalecimiento de 25 unidades productivas a través de mentorías especializadas, participación en feria de economía cultural y entrega de dotaciones - Bajo la marca Circuitos Vivos.",fecha:"20/06/2026",lugar:"Ibagué, Tolima",hora:"Por confirmar",lat:4.4389,lng:-75.2322,isVirtual:false},
+  {id:"148",area:"Dirección de Estrategia, Desarrollo y Emprendimiento",evento:"Feria de Economías Culturales — Circuitos Vivos · Leticia",descripcion:"Desarrollar una estrategia de fortalecimiento de 25 unidades productivas a través de mentorías especializadas, participación en feria de economía cultural y entrega de dotaciones - Bajo la marca Circuitos Vivos.",fecha:"20/06/2026",lugar:"Leticia, Amazonas",hora:"Por confirmar",lat:-4.2153,lng:-69.9406,isVirtual:false},
+  {id:"149",area:"Dirección de Estrategia, Desarrollo y Emprendimiento",evento:"Feria de Economías Culturales — Circuitos Vivos · Montería",descripcion:"Desarrollar una estrategia de fortalecimiento de 25 unidades productivas a través de mentorías especializadas, participación en feria de economía cultural y entrega de dotaciones - Bajo la marca Circuitos Vivos.",fecha:"20/06/2026",lugar:"Montería",hora:"Por confirmar",lat:8.7479,lng:-75.8814,isVirtual:false}
 ];
 
 // ============================================================
@@ -529,7 +581,7 @@ function matchesDateFilter(e){
   const f=parseFecha(e.fecha); if(!f)return true;
   const today=getToday(), end=new Date(2026,5,30);
   switch(currentDateFilter){
-    case 'all':   return f>=today&&f<=end;
+    case 'all':   return f>=new Date(2026,5,1)&&f<=end;
     case 'today': return f.getTime()===today.getTime();
     case 'week':  {const we=new Date(today);we.setDate(today.getDate()+7);return f>=today&&f<=we;}
     case 'jun5-11':  return f>=new Date(2026,5,5)&&f<=new Date(2026,5,11);
@@ -819,6 +871,10 @@ const AREA_GROUPS = [
     match: a => /icanh|caro y cuervo/i.test(a),
   },
   {
+    label: 'Dirección de Estrategia, Desarrollo y Emprendimiento',
+    match: a => a.toLowerCase().startsWith('dirección de estrategia'),
+  },
+  {
     label: 'Viceministerios y otras dependencias',
     match: a => /viceministerio|archivo general|cooperación|equipa de paz|gcai/i.test(a),
   },
@@ -985,14 +1041,35 @@ function switchView(v){
   applyFilters();
 }
 
+// ── LEGEND TOGGLE ──
+let legendCollapsed = false;
+function toggleLegend(){
+  legendCollapsed = !legendCollapsed;
+  const body = document.getElementById('legend-body');
+  const icon = document.getElementById('legend-toggle-icon');
+  if(legendCollapsed){
+    body.classList.add('collapsed');
+    icon.classList.add('collapsed');
+  } else {
+    body.classList.remove('collapsed');
+    icon.classList.remove('collapsed');
+  }
+}
+
 // ── MOBILE SIDEBAR TOGGLE ──
 let sidebarOpen=true;
 function toggleMobileSidebar(){
-  const sb=document.getElementById('sidebar'),btn=document.getElementById('sidebar-toggle');
+  const sb=document.getElementById('sidebar');
+  const label=document.getElementById('sidebar-drag-label');
   if(window.innerWidth<=640){
     sidebarOpen=!sidebarOpen;
-    sb.style.display=sidebarOpen?'flex':'none';
-    btn.textContent=sidebarOpen?'✕':'☰';
+    sb.classList.toggle('collapsed-mobile',!sidebarOpen);
+    if(label) label.textContent=sidebarOpen?'▲ Lista de eventos':'▼ Lista de eventos';
+    // adjust legend position
+    const legend=document.getElementById('map-legend');
+    if(legend){
+      legend.style.bottom = sidebarOpen ? 'calc(44vh + 10px)' : '42px';
+    }
   }
 }
 
